@@ -1,53 +1,53 @@
-# Dify on AWS with CDK
+# Dify on AWS with CDK（日本語版）
 
 [![Build](https://github.com/aws-samples/dify-self-hosted-on-aws/actions/workflows/build.yml/badge.svg)](https://github.com/aws-samples/dify-self-hosted-on-aws/actions/workflows/build.yml)
 
-Self-host [Dify](https://dify.ai/), an LLM app development platform, using AWS managed services with AWS CDK.
+AWSマネージドサービスとAWS CDKを使って、[Dify](https://dify.ai/)（LLMアプリ開発プラットフォーム）をセルフホストできます。
 
 ![architecture](./imgs/architecture.png)
 
-Key Features:
+主な特徴:
 
-* Fully managed services requiring less maintenance effort
-    * Aurora servereless v2, ElastiCache, ECS Fargate, etc.
-* Cost effective architectural decisions
-    * allow to use NAT instances instead of NAT Gateway, and Fargate spot capacity by default
-* Easily integrate with Bedrock models and Knowledge Bases
+* メンテナンス負荷の少ないフルマネージドサービス
+    * Aurora servereless v2、ElastiCache、ECS Fargateなど
+* コスト効率の高いアーキテクチャ設計
+    * NAT Gatewayの代わりにNATインスタンス利用や、Fargateスポットキャパシティをデフォルトで利用可能
+* BedrockモデルやKnowledge Basesとの簡単な連携
 
-## Quick Start
+## クイックスタート
 
-For a quick and convenient deployment, you can use the one-click deployment option available at:
-* [One-Click Deployment for Dify on AWS](https://github.com/aws-samples/sample-one-click-generative-ai-solutions?tab=readme-ov-file#dify-on-aws)
+手軽にデプロイしたい場合は、ワンクリックデプロイオプションをご利用ください:
+* [Dify on AWSのワンクリックデプロイ](https://github.com/aws-samples/sample-one-click-generative-ai-solutions?tab=readme-ov-file#dify-on-aws)
 
 本リポジトリの使い方について、日本語で書かれた記事もあります: 
 * [AWS CDKでDifyを一撃構築](https://note.com/yukkie1114/n/n0d9c5551569f) ( [CloudShell版](https://note.com/yukkie1114/n/n8e055c4e7566) )
 * [AWSマネージドサービスで Dify のセルフホスティングを試してみた](https://dev.classmethod.jp/articles/dify-self-hosting-aws/)
 
-## Prerequisites
-You must have the following dependencies installed to deploy this app:
+## 前提条件
+このアプリをデプロイするには、以下の依存関係が必要です:
 
-* [Node.js](https://nodejs.org/en/download/) (v18 or newer)
+* [Node.js](https://nodejs.org/en/download/) (v18以上)
 * [Docker](https://docs.docker.com/get-docker/)
-* [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html) and IAM profile with Administrator policy
+* [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html) およびAdministrator権限のIAMプロファイル
 
-## Deploy
-You can adjust configuration parameters such as AWS regions by modifying [`bin/cdk.ts`](bin/cdk.ts). Please also check [`EnvironmentProps` interface](./lib/environment-props.ts) for all the available parameters.
+## デプロイ方法
+AWSリージョンなどの設定パラメータは [`bin/cdk.ts`](bin/cdk.ts) で変更できます。利用可能な全パラメータは [`EnvironmentProps` インターフェース](./lib/environment-props.ts) をご確認ください。
 
 > [!IMPORTANT]
-> > If you are upgrading from Dify v0 to v1, please refer to [Upgrading Dify v0 to v1](#upgrading-dify-v0-to-v1).
+> > Dify v0からv1へアップグレードする場合は、[Dify v0からv1へのアップグレード](#upgrading-dify-v0-to-v1)を参照してください。
 
-Then you can run the following commands to deploy the entire stack.
+以下のコマンドで全スタックをデプロイできます。
 
 ```sh
-# install npm dependencies
+# npm依存パッケージのインストール
 npm ci
-# bootstrap the AWS account (required only once per account and region)
+# AWSアカウントのブートストラップ（アカウント・リージョンごとに1回のみ必要）
 npx cdk bootstrap
-# deploy the CDK stack
+# CDKスタックのデプロイ
 npx cdk deploy --all
 ```
 
-The initial deployment usually takes about 20 minutes. After a successful deployment, you will get the URL for the app.
+初回デプロイは約20分かかります。デプロイ成功後、アプリのURLが表示されます。
 
 ```
  ✅  DifyOnAwsCdkStack
@@ -58,13 +58,13 @@ Outputs:
 DifyOnAwsStack.DifyUrl = https://dify.example.com
 ```
 
-You can open the URL with a browser and get started!
+URLをブラウザで開いて利用を開始できます！
 
-### Deploy from CloudShell
+### CloudShellからのデプロイ
 
-You can use a dedicated script that works even in an environment with limited storage space such as [AWS CloudShell](https://docs.aws.amazon.com/cloudshell/latest/userguide/welcome.html).
+[AWS CloudShell](https://docs.aws.amazon.com/cloudshell/latest/userguide/welcome.html)のようなストレージ制限のある環境でも動作する専用スクリプトがあります。
 
-In CloudShell, you can just run the following commands:
+CloudShellでは、以下のコマンドを実行してください:
 
 ```sh
 git clone https://github.com/aws-samples/dify-self-hosted-on-aws.git
@@ -72,142 +72,142 @@ cd dify-self-hosted-on-aws
 ./simple-deploy.sh
 ```
 
-Then follow the prompts from the shell script. You will finally get the `DifyOnAwsStack.DifyUrl` output in the CLI.
+シェルスクリプトの指示に従って進めてください。最終的にCLIで `DifyOnAwsStack.DifyUrl` が出力されます。
 
 ## Tips
 
-Here is the information that might help when you use Dify on AWS.
+AWS上でDifyを使う際に役立つ情報です。
 
-### Setup Dify to use Bedrock
+### DifyでBedrockを利用する設定
 
-After logged in, you can setup Dify to use Bedrock LLMs.
+ログイン後、DifyでBedrock LLMを利用する設定ができます。
 
 > [!IMPORTANT]  
-> Before setting up models in Dify, you have to **enable models** you want to use in Bedrock management console. Please read [this document](https://docs.aws.amazon.com/bedrock/latest/userguide/model-access.html#model-access-add) for more details.
+> Difyでモデルを設定する前に、Bedrock管理コンソールで利用したいモデルを**有効化**してください。詳細は[こちらのドキュメント](https://docs.aws.amazon.com/bedrock/latest/userguide/model-access.html#model-access-add)を参照。
 
-Go to settings by clicking the right-top profile, click `WORKSPACE -> Model Provider`, and select `AWS Bedrock model`.
+右上のプロフィールから設定画面へ進み、`WORKSPACE -> Model Provider`をクリックし、`AWS Bedrock model`を選択します。
 
-IAM policies are already configured properly, so you can just select a correct AWS region (where the models are enabled) to use Bedrock models, and click `Save`.
+IAMポリシーは既に適切に設定されているため、Bedrockモデルが有効なAWSリージョンを選択し、`Save`をクリックするだけで利用できます。
 
 ![model-setup](./imgs/model-setup.png)
 
-### Add Python packages available in code execution
+### コード実行で利用可能なPythonパッケージの追加
 
-You can add Python packages that is available in Dify code execution feature. Edit [python-requirements.txt](./lib/constructs/dify-services/docker/python-requirements.txt) following the [Requirements File Format](https://pip.pypa.io/en/stable/reference/requirements-file-format/).
+Difyのコード実行機能で利用可能なPythonパッケージを追加できます。[python-requirements.txt](./lib/constructs/dify-services/docker/python-requirements.txt)を[Requirements File Format](https://pip.pypa.io/en/stable/reference/requirements-file-format/)に従って編集してください。
 
-In some libraries, you have to allow additonal system calls in Dify sandbox. This CDK project let you to allow all the system calls by `allowAnySysCalls` flag in [`bin/cdk.ts`](bin/cdk.ts).
+一部のライブラリでは、Difyサンドボックスで追加のシステムコール許可が必要です。このCDKプロジェクトでは、[`bin/cdk.ts`](bin/cdk.ts)の`allowAnySysCalls`フラグで全システムコールを許可できます。
 
 > [!WARNING]
-> If you enable `allowAnySysCalls` flag, please make sure that code executed in your Dify tenant can be fully trusted.
+> `allowAnySysCalls`を有効にする場合、Difyテナントで実行されるコードが完全に信頼できることを確認してください。
 
-Please also refer to this blog article for more details: [Using any Python libraries in Dify's code block](https://tmokmss.hatenablog.com/entry/use-any-python-packages-on-dify-sandbox)
+詳細は以下のブログ記事も参照してください: [Difyのコードブロックで任意のPythonライブラリを使う](https://tmokmss.hatenablog.com/entry/use-any-python-packages-on-dify-sandbox)
 
-### Connect to Bedrock Knowledge Bases
+### Bedrock Knowledge Basesへの接続
 
-You can use the [External Knowledge Base feature](https://docs.dify.ai/guides/knowledge-base/connect-external-knowledge) to connect to [Amazon Bedrock Knowledge Bases](https://aws.amazon.com/bedrock/knowledge-bases/). Because the external knowledge API is deployed as a sidecar of Dify API, you can use the feature immediately with the following steps:
+[外部ナレッジベース機能](https://docs.dify.ai/guides/knowledge-base/connect-external-knowledge)を使って[Amazon Bedrock Knowledge Bases](https://aws.amazon.com/bedrock/knowledge-bases/)に接続できます。外部ナレッジAPIはDify APIのサイドカーとしてデプロイされるため、以下の手順ですぐに利用可能です:
 
-1. Click Dify -> Knowledge -> Add an External Knowledge API button.
+1. Dify -> Knowledge -> Add an External Knowledge APIボタンをクリック
     * ![add external knowledge api](./imgs/add-external-knowledge-api.png)
-2. Fill the form as below:
-    1. Name: any name as you like (e.g. `Bedrock Knowledge Bases`)
+2. 以下のようにフォームを入力:
+    1. Name: 任意（例: `Bedrock Knowledge Bases`）
     2. API Endpoint: `http://localhost:8000`
-    3. API Key: `dummy-key` (you can configure it by editing `BEARER_TOKEN` environment variable in [`api.ts`](./lib/constructs/dify-services/api.ts).)
-3. Click Dify -> Knowledge -> Create Knowledge -> Connect to an External Knowledge Base
+    3. API Key: `dummy-key`（`BEARER_TOKEN`環境変数で設定可能。[`api.ts`](./lib/constructs/dify-services/api.ts)を参照）
+3. Dify -> Knowledge -> Create Knowledge -> Connect to an External Knowledge Baseをクリック
     * ![Connect to an External Knowledge Base](./imgs/connect-to-an-externa-lknowledge-base.png)
-4. Fill the form as below
-    1. External Knowledge Name / Knowledge Description: any string
-    2. External Knowledge API: the external API you created in the previous step
-    3. External Knowledge ID: The Bedrock Knowledge Base ID you want to use. The AWS region is us-west-2 by default, but you can override the AWS region by adding region prefix with colon, e.g. `us-east-1:QWERTYASDF`.
-5. Now you can use the knowledge from Dify tools.
+4. 以下のようにフォームを入力
+    1. External Knowledge Name / Knowledge Description: 任意の文字列
+    2. External Knowledge API: 前ステップで作成した外部API
+    3. External Knowledge ID: 利用したいBedrock Knowledge Base ID。AWSリージョンはデフォルトus-west-2ですが、`us-east-1:QWERTYASDF`のようにリージョンプレフィックスで上書き可能。
+5. これでDifyツールからナレッジを利用できます。
 
-For more information, please refer to this article: [Dify can also do RAG on documents with charts and graphs!](https://qiita.com/mabuchs/items/85fb2dad19ec441c870c)
+詳細は以下の記事も参照してください: [Difyでグラフやチャート付きドキュメントもRAGできる！](https://qiita.com/mabuchs/items/85fb2dad19ec441c870c)
 
-### Scaling out / Scaling up
+### スケールアウト／スケールアップ
 
-Although this system is designed with infrastructure scalability in mind, there are several tuning knobs that you might want to explicitly set as you prepare for larger numbers of users.
+本システムはスケーラビリティを考慮して設計されていますが、多数ユーザー対応のために明示的に設定できるパラメータもあります。
 
-The below are the list of configurable parameters and their default values:
+主な設定可能パラメータとデフォルト値は以下の通りです:
 
-1. ECS Task ([api.ts](./lib/constructs/dify-services/api.ts), [web.ts](./lib/constructs/dify-services/web.ts))
-    1. Size
+1. ECSタスク（[api.ts](./lib/constructs/dify-services/api.ts), [web.ts](./lib/constructs/dify-services/web.ts)）
+    1. サイズ
         1. api/worker: 1024vCPU / 2048MB
         2. web: 256vCPU / 512MB
     2. Desired Count
-        1. 1 task for each service
-2. ElastiCache ([redis.ts](./lib/constructs/redis.ts))
-    1. Node Type: `cache.t4g.micro`
-    2. Node Count: 1
-3. Aurora Postgres ([postgres.ts](./lib/constructs/postgres.ts))
-    1. Serverless v2 maximum capacity: 2 ACU
+        1. 各サービス1タスク
+2. ElastiCache（[redis.ts](./lib/constructs/redis.ts)）
+    1. ノードタイプ: `cache.t4g.micro`
+    2. ノード数: 1
+3. Aurora Postgres（[postgres.ts](./lib/constructs/postgres.ts)）
+    1. Serverless v2最大キャパシティ: 2 ACU
 
-### Deploying to a closed network (a.k.a 閉域要件)
+### 閉域（インターネット非接続）環境へのデプロイ
 
-You can deploy the system on a closed network (i.e. a VPC without internet gateway or NAT gateway) with a few simple additional steps.
+インターネットゲートウェイやNATゲートウェイのないVPC（閉域）にも簡単な追加手順でデプロイ可能です。
 
-To deploy on a closed network, please follow the steps below:
+閉域環境でのデプロイ手順:
 
-1. Set configuration parameters in `bin/cdk.ts` as below:
+1. `bin/cdk.ts`で以下のように設定:
     ```ts
     export const props: EnvironmentProps = {
-        // set region and account explicitly.
+        // リージョン・アカウントを明示的に指定
         awsRegion: 'ap-northeast-1',
         awsAccount: '123456789012',
 
-        // Set your internal IP address ranges here.
+        // 内部IPアドレス範囲を指定
         allowedIPv4Cidrs: ['10.0.0.0/16'],
 
-        // The below two flags must be set for closed network deployment.
+        // 閉域デプロイ用の2つのフラグ
         useCloudFront: false,
         internalAlb: true,
 
-        // If Docker Hub is not accessible from your vpc subnets, set this property and run copy-to-ecr script (see step#2)
+        // Docker HubがVPCサブネットからアクセス不可の場合はこのプロパティを設定し、copy-to-ecrスクリプトを実行（step#2参照）
         customEcrRepositoryName: 'dify-images',
 
-        // To let the CDK create a VPC with closed network, set this property.
+        // CDKに閉域VPCを作成させる場合
         vpcIsolated: true,
-        // Or, optionally you can import an existing VPC.
+        // 既存VPCをインポートする場合（任意）
         vpcId: 'vpc-12345678',
 
-        // Other properties can be configured as you like.
+        // その他のプロパティは任意で設定
     };
     ```
 
-2. Open [`python-requirements.txt`](lib/constructs/dify-services/docker/sandbox/python-requirements.txt) and remove all the dependencies from it
-    * This is **only required** if [PyPI](https://pypi.org/) is not accessible from your vpc subnets.
-3. Copy all the dify container images in Docker Hub to an ECR repository by executing `npx ts-node scripts/copy-to-ecr.ts`.
-    * The script handles all the tasks required to copy images. You will also need to run `npm ci` before this.
-        * You can create an ECR repository with the name of `customEcrRepositoryName` by yourself, or the script creates one if it does not exist yet.
-        * This script must be executed in an environment that has access to the Internet.
-        * Please run the script every time you change `difyImageTag` or `difySandboxImageTag` property.
-    * This is **only required** if [Docker Hub](https://www.docker.com/products/docker-hub/) is not accessible from your vpc subnets.
-4. If you are using an existing VPC (`vpcId` property), make sure the required VPC endpoints are provisioned before deployment.
-    * See [`vpc-endpoints.ts`](lib/constructs/vpc-endpoints.ts) for the list of required VPC endpoints.
-    * If you let CDK create a VPC (by setting `vpcIsolated: true`), all the endpoints are created automatically.
-5. Deploy the CDK project following the [Deploy](#deploy) section.
-6. After the deployment, please configure Bedrock in Dify with the same AWS region as your VPC (see [setup section](#setup-dify-to-use-bedrock))
-    * This is **only required** if Bedrock API in other regions are not accessible from your vpc subnets.
+2. [`python-requirements.txt`](lib/constructs/dify-services/docker/sandbox/python-requirements.txt)を開き、全依存パッケージを削除
+    * [PyPI](https://pypi.org/)がVPCサブネットからアクセス不可の場合のみ必要
+3. Docker Hub上のdifyコンテナイメージをECRリポジトリにコピー（`npx ts-node scripts/copy-to-ecr.ts`）
+    * スクリプトが全て自動で処理。事前に`npm ci`も必要。
+        * `customEcrRepositoryName`名のECRリポジトリは自分で作成してもよいし、スクリプトが自動作成も可能。
+        * このスクリプトはインターネット接続環境で実行する必要あり。
+        * `difyImageTag`や`difySandboxImageTag`を変更した場合は毎回実行。
+    * [Docker Hub](https://www.docker.com/products/docker-hub/)がVPCサブネットからアクセス不可の場合のみ必要
+4. 既存VPC（`vpcId`プロパティ）を使う場合は、必要なVPCエンドポイントを事前に作成
+    * 必要なVPCエンドポイント一覧は[`vpc-endpoints.ts`](lib/constructs/vpc-endpoints.ts)を参照
+    * CDKにVPC作成を任せる場合（`vpcIsolated: true`）、全エンドポイントは自動作成
+5. [デプロイ方法](#deploy)に従いCDKプロジェクトをデプロイ
+6. デプロイ後、DifyでBedrockをVPCと同じAWSリージョンで設定（[Bedrock設定手順](#setup-dify-to-use-bedrock)参照）
+    * 他リージョンのBedrock APIがVPCサブネットからアクセス不可の場合のみ必要
 
-### Additional Environment Variables
+### 追加環境変数の設定
 
-You can configure additional environment variables for Dify containers by using the `additionalEnvironmentVariables` property:
+Difyコンテナに追加の環境変数を設定するには、`additionalEnvironmentVariables`プロパティを利用します:
 
 ```typescript
 new DifySelfHostedOnAwsStack(app, 'DifySelfHostedOnAwsStack', {
   additionalEnvironmentVariables: [
     {
-      // Example of applying environment variable to all containers
+      // 全コンテナに適用する例
       key: 'GLOBAL_SETTING',
       value: 'value',
-      // Omitting targets applies to all containers
+      // targets省略時は全コンテナに適用
     },
     {
-      // Example of referencing Systems Manager parameter
+      // Systems Managerパラメータ参照例
       key: 'CONFIG_PARAM',
       value: { parameterName: 'my-parameter' },
       targets: ['web', 'api'],
     },
     {
-      // Example of referencing a specific field in Secrets Manager
+      // Secrets Managerの特定フィールド参照例
       key: 'API_KEY',
       value: { secretName: 'my-secret', field: 'apiKey' },
       targets: ['worker'],
@@ -216,15 +216,15 @@ new DifySelfHostedOnAwsStack(app, 'DifySelfHostedOnAwsStack', {
 });
 ```
 
-This feature allows you to inject custom environment variables into Dify containers. The container types that can be specified in `targets` are `'web'`, `'api'`, `'worker'`, and `'sandbox'`.
+この機能でDifyコンテナにカスタム環境変数を注入できます。`targets`で指定できるコンテナタイプは `'web'`, `'api'`, `'worker'`, `'sandbox'` です。
 
-### Connect to Notion
+### Notionとの連携
 
-You can connect to [Notion](https://www.notion.com/) data by the following steps:
+[Notion](https://www.notion.com/)データと連携するには、以下の手順で行います:
 
-1. Obtain the Notion Secret Token: [Notion - Authorization](https://developers.notion.com/docs/authorization).
+1. Notion Secret Tokenを取得: [Notion - Authorization](https://developers.notion.com/docs/authorization)
 
-2. Create a Screts Manager secret for the token:
+2. Secrets Managerシークレットを作成:
 ```sh
  NOTION_INTERNAL_SECRET="NOTION_SECRET_REPLACE_THIS"
  aws secretsmanager create-secret \
@@ -233,10 +233,10 @@ You can connect to [Notion](https://www.notion.com/) data by the following steps
     --secret-string ${NOTION_INTERNAL_SECRET}
 ```
 
-3. Set `additionalEnvironmentVariables` in `bin/cdk.ts` as below:
+3. `bin/cdk.ts`で`additionalEnvironmentVariables`を以下のように設定:
 ```ts
 export const props: EnvironmentProps = {
-  // ADD THIS
+  // 追加
   additionalEnvironmentVariables: [
     {
       key: 'NOTION_INTEGRATION_TYPE',
@@ -252,47 +252,46 @@ export const props: EnvironmentProps = {
 }
 ```
 
-4. Deploy the stack by `cdk deploy` command.
-5. Now you can [import data from Notion](https://docs.dify.ai/guides/knowledge-base/create-knowledge-and-upload-documents/1.-import-text-data/1.1-import-data-from-notion).
+4. `cdk deploy`でスタックをデプロイ
+5. [Notionからデータをインポート](https://docs.dify.ai/guides/knowledge-base/create-knowledge-and-upload-documents/1.-import-text-data/1.1-import-data-from-notion)できるようになります。
 
-### Setup Email (SMTP) for user invitation
+### ユーザー招待用メール（SMTP）設定
 
-You can let Dify send emails to invite new users or reset passwords. To enable the feature, set `setupEmail` property to `true` in `bin/cdk.ts` first. Note that you can only configure one email server (Amazon SES Identity) per `domainName` property.
+Difyで新規ユーザー招待やパスワードリセットメールを送信できます。利用には`bin/cdk.ts`で`setupEmail`プロパティを`true`に設定してください。`domainName`ごとに1つのメールサーバー（Amazon SES Identity）のみ設定可能です。
 
-After a successful deployment, you have to move out from SES sandbox to send emails to non-verified addresses and domains. Please refer to the document for more details: [Request production access (Moving out of the Amazon SES sandbox)](https://docs.aws.amazon.com/ses/latest/dg/request-production-access.html)
+デプロイ後、SESサンドボックスから本番環境へ移行する必要があります。詳細は[Amazon SESサンドボックスからの移行](https://docs.aws.amazon.com/ses/latest/dg/request-production-access.html)を参照してください。
 
-### Upgrading Dify v0 to v1
-When you upgrade Dify from v0 to v1, you need to execute some migration steps described below.
+### Dify v0からv1へのアップグレード
+Difyをv0からv1へアップグレードする場合、以下のマイグレーション手順が必要です。
 
-1. Set `autoMigration: false` in lib/dify-on-aws-stack.ts (`ApiService` construct).
-2. Deploy the project with `difyImageTag: 1.0.0` (`bin/cdk.ts`), and you will get two commands required for the next steps
+1. lib/dify-on-aws-stack.ts（`ApiService`コンストラクト）で`autoMigration: false`を設定
+2. `difyImageTag: 1.0.0`（`bin/cdk.ts`）でプロジェクトをデプロイし、次の2つのコマンドが表示されます
    ```sh
     DifyOnAwsStack.ConsoleConnectToTaskCommand = aws ecs execute-command --region ap-northeast-1 --cluster DifyOnAwsStack-ClusterEB0386A7-redacted --container Main --interactive --command "bash" --task TASK_ID
     DifyOnAwsStack.ConsoleListTasksCommand = aws ecs list-tasks --region ap-northeast-1 --cluster DifyOnAwsStack-ClusterEB0386A7-redacted  --service-name DifyOnAwsStack-ApiServiceFargateServiceE4EA9E4E-redacted --desired-status RUNNING
    ```
-3. Run commands in `ConsoleListTasksCommand` to get the ECS task ARN
-4. Replace `TASK_ID` in `ConsoleConnectToTaskCommand` with the task ARN and run it
-5. You can now run commands in Dify environment, run the below two commands (c.f. [Dify v1.0.0 release note](https://github.com/langgenius/dify/releases/tag/1.0.0)):
+3. `ConsoleListTasksCommand`でECSタスクARNを取得
+4. `ConsoleConnectToTaskCommand`の`TASK_ID`をタスクARNに置き換えて実行
+5. Dify環境で以下2コマンドを実行（[Dify v1.0.0リリースノート](https://github.com/langgenius/dify/releases/tag/1.0.0)参照）:
    ```sh
    poetry run flask extract-plugins --workers=20
    poetry run flask install-plugins --workers=2
    ```
-6. After the commands run successfully, set `autoMigration: true`, and deploy CDK again. You should be now onboard with Dify v1.
+6. コマンド実行後、`autoMigration: true`に設定し、CDKを再デプロイ。これでDify v1に移行完了です。
 
-## Clean up
-To avoid incurring future charges, clean up the resources you created.
+## クリーンアップ
+今後の課金を防ぐため、作成したリソースを削除してください。
 
 ```sh
 npx cdk destroy --force
-# If you encountered an error during the deletion, please retry. It happens sometimes.
+# 削除時にエラーが出た場合は再実行してください。たまに発生します。
 ```
 
-If you set `customEcrRepositoryName` and have run the `copy-to-ecr.ts` script, please remove the container repository and images in it manually.
+`customEcrRepositoryName`を設定し`copy-to-ecr.ts`スクリプトを実行した場合は、ECRリポジトリとイメージも手動で削除してください。
 
-## Cost
+## コスト
 
-The following table provides a sample cost breakdown for deploying this system in the us-east-1 (N. Virginia) region for one month (when deployed using less expensive configuration).
-
+以下はus-east-1（バージニア北部）リージョンで本システムを安価な構成で1ヶ月運用した場合のサンプルコストです。
 
 | AWS service | Dimensions | Cost [USD/month] |
 | --------------------| ----------------- | -------------------------------|
@@ -306,16 +305,16 @@ The following table provides a sample cost breakdown for deploying this system i
 | Secrets Manager | Secret x3 | $1.2 |
 | TOTAL | estimate per month | $47.9 |
 
-Note that you have to pay LLM cost (e.g. Amazon Bedrock ) in addition to the above, which totally depends on your specific use case.
+上記に加え、LLM利用料（例: Amazon Bedrock）が発生します。これはユースケースにより大きく異なります。
 
 
-## Security
+## セキュリティ
 
-See [CONTRIBUTING](CONTRIBUTING.md#security-issue-notifications) for more information.
+詳細は[CONTRIBUTING](CONTRIBUTING.md#security-issue-notifications)を参照してください。
 
-## License
+## ライセンス
 
-This library is licensed under the MIT-0 License. See the LICENSE file. You should also check [Dify's license](https://github.com/langgenius/dify/blob/main/LICENSE).
+本ライブラリはMIT-0ライセンスです。LICENSEファイルを参照してください。また[Difyのライセンス](https://github.com/langgenius/dify/blob/main/LICENSE)もご確認ください。
 
-## Acknowledgement
-This CDK code is heavily inspired by [dify-aws-terraform](https://github.com/sonodar/dify-aws-terraform).
+## 謝辞
+このCDKコードは [dify-aws-terraform](https://github.com/sonodar/dify-aws-terraform) に大きくインスパイアされています。
