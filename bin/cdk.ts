@@ -14,10 +14,10 @@ export const props: EnvironmentProps = {
   difyPluginDaemonImageTag: '0.0.6-local',
 
   // uncomment the below options for less expensive configuration:
-  // isRedisMultiAz: false,
-  // useNatInstance: true,
-  // enableAuroraScalesToZero: true,
-  // useFargateSpot: true,
+  isRedisMultiAz: false,
+  useNatInstance: true,
+  enableAuroraScalesToZero: true,
+  useFargateSpot: true,
 
   // Please see EnvironmentProps in lib/environment-props.ts for all the available properties
 };
