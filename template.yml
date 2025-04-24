@@ -1,0 +1,4198 @@
+{
+  "Description": "Dify on AWS (uksb-zea0rh9k0v)",
+  "Resources": {
+    "Vpc8378EB38": {
+      "Type": "AWS::EC2::VPC",
+      "Properties": {
+        "CidrBlock": "10.0.0.0/16",
+        "EnableDnsHostnames": true,
+        "EnableDnsSupport": true,
+        "InstanceTenancy": "default",
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "DifyOnAwsStack/Vpc"
+          }
+        ]
+      },
+      "Metadata": {
+        "aws:cdk:path": "DifyOnAwsStack/Vpc/Resource"
+      }
+    },
+    "VpcPublicSubnet1Subnet5C2D37C4": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "AvailabilityZone": "ap-northeast-1a",
+        "CidrBlock": "10.0.0.0/18",
+        "MapPublicIpOnLaunch": false,
+        "Tags": [
+          {
+            "Key": "aws-cdk:subnet-name",
+            "Value": "Public"
+          },
+          {
+            "Key": "aws-cdk:subnet-type",
+            "Value": "Public"
+          },
+          {
+            "Key": "Name",
+            "Value": "DifyOnAwsStack/Vpc/PublicSubnet1"
+          }
+        ],
+        "VpcId": {
+          "Ref": "Vpc8378EB38"
+        }
+      },
+      "Metadata": {
+        "aws:cdk:path": "DifyOnAwsStack/Vpc/PublicSubnet1/Subnet"
+      }
+    },
+    "VpcPublicSubnet1RouteTable6C95E38E": {
+      "Type": "AWS::EC2::RouteTable",
+      "Properties": {
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "DifyOnAwsStack/Vpc/PublicSubnet1"
+          }
+        ],
+        "VpcId": {
+          "Ref": "Vpc8378EB38"
+        }
+      },
+      "Metadata": {
+        "aws:cdk:path": "DifyOnAwsStack/Vpc/PublicSubnet1/RouteTable"
+      }
+    },
+    "VpcPublicSubnet1RouteTableAssociation97140677": {
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+      "Properties": {
+        "RouteTableId": {
+          "Ref": "VpcPublicSubnet1RouteTable6C95E38E"
+        },
+        "SubnetId": {
+          "Ref": "VpcPublicSubnet1Subnet5C2D37C4"
+        }
+      },
+      "Metadata": {
+        "aws:cdk:path": "DifyOnAwsStack/Vpc/PublicSubnet1/RouteTableAssociation"
+      }
+    },
+    "VpcPublicSubnet1DefaultRoute3DA9E72A": {
+      "Type": "AWS::EC2::Route",
+      "Properties": {
+        "DestinationCidrBlock": "0.0.0.0/0",
+        "GatewayId": {
+          "Ref": "VpcIGWD7BA715C"
+        },
+        "RouteTableId": {
+          "Ref": "VpcPublicSubnet1RouteTable6C95E38E"
+        }
+      },
+      "DependsOn": [
+        "VpcVPCGWBF912B6E"
+      ],
+      "Metadata": {
+        "aws:cdk:path": "DifyOnAwsStack/Vpc/PublicSubnet1/DefaultRoute"
+      }
+    },
+    "VpcPublicSubnet1NatInstanceInstanceRole9D835E32": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "ec2.amazonaws.com"
+              }
+            }
+          ],
+          "Version": "2012-10-17"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "DifyOnAwsStack/Vpc/PublicSubnet1/NatInstance"
+          }
+        ]
+      },
+      "Metadata": {
+        "aws:cdk:path": "DifyOnAwsStack/Vpc/PublicSubnet1/NatInstance/InstanceRole/Resource"
+      }
+    },
+    "VpcPublicSubnet1NatInstanceInstanceProfileEE10C485": {
+      "Type": "AWS::IAM::InstanceProfile",
+      "Properties": {
+        "Roles": [
+          {
+            "Ref": "VpcPublicSubnet1NatInstanceInstanceRole9D835E32"
+          }
+        ]
+      },
+      "Metadata": {
+        "aws:cdk:path": "DifyOnAwsStack/Vpc/PublicSubnet1/NatInstance/InstanceProfile"
+      }
+    },
+    "VpcPublicSubnet1NatInstance57B636B8": {
+      "Type": "AWS::EC2::Instance",
+      "Properties": {
+        "AvailabilityZone": "ap-northeast-1a",
+        "IamInstanceProfile": {
+          "Ref": "VpcPublicSubnet1NatInstanceInstanceProfileEE10C485"
+        },
+        "ImageId": {
+          "Ref": "SsmParameterValueawsserviceamiamazonlinuxlatestal2023amikernel61arm64C96584B6F00A464EAD1953AFF4B05118Parameter"
+        },
+        "InstanceType": "t4g.nano",
+        "NetworkInterfaces": [
+          {
+            "AssociatePublicIpAddress": true,
+            "DeviceIndex": "0",
+            "GroupSet": [
+              {
+                "Fn::GetAtt": [
+                  "VpcNatSecurityGroup8DA26EDC",
+                  "GroupId"
+                ]
+              }
+            ],
+            "SubnetId": {
+              "Ref": "VpcPublicSubnet1Subnet5C2D37C4"
+            }
+          }
+        ],
+        "SourceDestCheck": false,
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "DifyOnAwsStack/Vpc/PublicSubnet1/NatInstance"
+          }
+        ],
+        "UserData": {
+          "Fn::Base64": "#!/bin/bash\nyum install iptables-services -y\nsystemctl enable iptables\nsystemctl start iptables\necho \"net.ipv4.ip_forward=1\" > /etc/sysctl.d/custom-ip-forwarding.conf\nsudo sysctl -p /etc/sysctl.d/custom-ip-forwarding.conf\nsudo /sbin/iptables -t nat -A POSTROUTING -o $(route | awk '/^default/{print $NF}') -j MASQUERADE\nsudo /sbin/iptables -F FORWARD\nsudo service iptables save"
+        }
+      },
+      "DependsOn": [
+        "VpcPublicSubnet1DefaultRoute3DA9E72A",
+        "VpcPublicSubnet1NatInstanceInstanceRole9D835E32",
+        "VpcPublicSubnet1RouteTableAssociation97140677"
+      ],
+      "Metadata": {
+        "aws:cdk:path": "DifyOnAwsStack/Vpc/PublicSubnet1/NatInstance/Resource"
+      }
+    },
+    "VpcPublicSubnet2Subnet691E08A3": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "AvailabilityZone": "ap-northeast-1c",
+        "CidrBlock": "10.0.64.0/18",
+        "MapPublicIpOnLaunch": false,
+        "Tags": [
+          {
+            "Key": "aws-cdk:subnet-name",
+            "Value": "Public"
+          },
+          {
+            "Key": "aws-cdk:subnet-type",
+            "Value": "Public"
+          },
+          {
+            "Key": "Name",
+            "Value": "DifyOnAwsStack/Vpc/PublicSubnet2"
+          }
+        ],
+        "VpcId": {
+          "Ref": "Vpc8378EB38"
+        }
+      },
+      "Metadata": {
+        "aws:cdk:path": "DifyOnAwsStack/Vpc/PublicSubnet2/Subnet"
+      }
+    },
+    "VpcPublicSubnet2RouteTable94F7E489": {
+      "Type": "AWS::EC2::RouteTable",
+      "Properties": {
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "DifyOnAwsStack/Vpc/PublicSubnet2"
+          }
+        ],
+        "VpcId": {
+          "Ref": "Vpc8378EB38"
+        }
+      },
+      "Metadata": {
+        "aws:cdk:path": "DifyOnAwsStack/Vpc/PublicSubnet2/RouteTable"
+      }
+    },
+    "VpcPublicSubnet2RouteTableAssociationDD5762D8": {
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+      "Properties": {
+        "RouteTableId": {
+          "Ref": "VpcPublicSubnet2RouteTable94F7E489"
+        },
+        "SubnetId": {
+          "Ref": "VpcPublicSubnet2Subnet691E08A3"
+        }
+      },
+      "Metadata": {
+        "aws:cdk:path": "DifyOnAwsStack/Vpc/PublicSubnet2/RouteTableAssociation"
+      }
+    },
+    "VpcPublicSubnet2DefaultRoute97F91067": {
+      "Type": "AWS::EC2::Route",
+      "Properties": {
+        "DestinationCidrBlock": "0.0.0.0/0",
+        "GatewayId": {
+          "Ref": "VpcIGWD7BA715C"
+        },
+        "RouteTableId": {
+          "Ref": "VpcPublicSubnet2RouteTable94F7E489"
+        }
+      },
+      "DependsOn": [
+        "VpcVPCGWBF912B6E"
+      ],
+      "Metadata": {
+        "aws:cdk:path": "DifyOnAwsStack/Vpc/PublicSubnet2/DefaultRoute"
+      }
+    },
+    "VpcPrivateSubnet1Subnet536B997A": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "AvailabilityZone": "ap-northeast-1a",
+        "CidrBlock": "10.0.128.0/18",
+        "MapPublicIpOnLaunch": false,
+        "Tags": [
+          {
+            "Key": "aws-cdk:subnet-name",
+            "Value": "Private"
+          },
+          {
+            "Key": "aws-cdk:subnet-type",
+            "Value": "Private"
+          },
+          {
+            "Key": "Name",
+            "Value": "DifyOnAwsStack/Vpc/PrivateSubnet1"
+          }
+        ],
+        "VpcId": {
+          "Ref": "Vpc8378EB38"
+        }
+      },
+      "Metadata": {
+        "aws:cdk:path": "DifyOnAwsStack/Vpc/PrivateSubnet1/Subnet"
+      }
+    },
+    "VpcPrivateSubnet1RouteTableB2C5B500": {
+      "Type": "AWS::EC2::RouteTable",
+      "Properties": {
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "DifyOnAwsStack/Vpc/PrivateSubnet1"
+          }
+        ],
+        "VpcId": {
+          "Ref": "Vpc8378EB38"
+        }
+      },
+      "Metadata": {
+        "aws:cdk:path": "DifyOnAwsStack/Vpc/PrivateSubnet1/RouteTable"
+      }
+    },
+    "VpcPrivateSubnet1RouteTableAssociation70C59FA6": {
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+      "Properties": {
+        "RouteTableId": {
+          "Ref": "VpcPrivateSubnet1RouteTableB2C5B500"
+        },
+        "SubnetId": {
+          "Ref": "VpcPrivateSubnet1Subnet536B997A"
+        }
+      },
+      "Metadata": {
+        "aws:cdk:path": "DifyOnAwsStack/Vpc/PrivateSubnet1/RouteTableAssociation"
+      }
+    },
+    "VpcPrivateSubnet1DefaultRouteBE02A9ED": {
+      "Type": "AWS::EC2::Route",
+      "Properties": {
+        "DestinationCidrBlock": "0.0.0.0/0",
+        "InstanceId": {
+          "Ref": "VpcPublicSubnet1NatInstance57B636B8"
+        },
+        "RouteTableId": {
+          "Ref": "VpcPrivateSubnet1RouteTableB2C5B500"
+        }
+      },
+      "Metadata": {
+        "aws:cdk:path": "DifyOnAwsStack/Vpc/PrivateSubnet1/DefaultRoute"
+      }
+    },
+    "VpcPrivateSubnet2Subnet3788AAA1": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "AvailabilityZone": "ap-northeast-1c",
+        "CidrBlock": "10.0.192.0/18",
+        "MapPublicIpOnLaunch": false,
+        "Tags": [
+          {
+            "Key": "aws-cdk:subnet-name",
+            "Value": "Private"
+          },
+          {
+            "Key": "aws-cdk:subnet-type",
+            "Value": "Private"
+          },
+          {
+            "Key": "Name",
+            "Value": "DifyOnAwsStack/Vpc/PrivateSubnet2"
+          }
+        ],
+        "VpcId": {
+          "Ref": "Vpc8378EB38"
+        }
+      },
+      "Metadata": {
+        "aws:cdk:path": "DifyOnAwsStack/Vpc/PrivateSubnet2/Subnet"
+      }
+    },
+    "VpcPrivateSubnet2RouteTableA678073B": {
+      "Type": "AWS::EC2::RouteTable",
+      "Properties": {
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "DifyOnAwsStack/Vpc/PrivateSubnet2"
+          }
+        ],
+        "VpcId": {
+          "Ref": "Vpc8378EB38"
+        }
+      },
+      "Metadata": {
+        "aws:cdk:path": "DifyOnAwsStack/Vpc/PrivateSubnet2/RouteTable"
+      }
+    },
+    "VpcPrivateSubnet2RouteTableAssociationA89CAD56": {
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+      "Properties": {
+        "RouteTableId": {
+          "Ref": "VpcPrivateSubnet2RouteTableA678073B"
+        },
+        "SubnetId": {
+          "Ref": "VpcPrivateSubnet2Subnet3788AAA1"
+        }
+      },
+      "Metadata": {
+        "aws:cdk:path": "DifyOnAwsStack/Vpc/PrivateSubnet2/RouteTableAssociation"
+      }
+    },
+    "VpcPrivateSubnet2DefaultRoute060D2087": {
+      "Type": "AWS::EC2::Route",
+      "Properties": {
+        "DestinationCidrBlock": "0.0.0.0/0",
+        "InstanceId": {
+          "Ref": "VpcPublicSubnet1NatInstance57B636B8"
+        },
+        "RouteTableId": {
+          "Ref": "VpcPrivateSubnet2RouteTableA678073B"
+        }
+      },
+      "Metadata": {
+        "aws:cdk:path": "DifyOnAwsStack/Vpc/PrivateSubnet2/DefaultRoute"
+      }
+    },
+    "VpcIGWD7BA715C": {
+      "Type": "AWS::EC2::InternetGateway",
+      "Properties": {
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "DifyOnAwsStack/Vpc"
+          }
+        ]
+      },
+      "Metadata": {
+        "aws:cdk:path": "DifyOnAwsStack/Vpc/IGW"
+      }
+    },
+    "VpcVPCGWBF912B6E": {
+      "Type": "AWS::EC2::VPCGatewayAttachment",
+      "Properties": {
+        "InternetGatewayId": {
+          "Ref": "VpcIGWD7BA715C"
+        },
+        "VpcId": {
+          "Ref": "Vpc8378EB38"
+        }
+      },
+      "Metadata": {
+        "aws:cdk:path": "DifyOnAwsStack/Vpc/VPCGW"
+      }
+    },
+    "VpcNatSecurityGroup8DA26EDC": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "Security Group for NAT instances",
+        "SecurityGroupEgress": [
+          {
+            "CidrIp": "0.0.0.0/0",
+            "Description": "Allow all outbound traffic by default",
+            "IpProtocol": "-1"
+          }
+        ],
+        "SecurityGroupIngress": [
+          {
+            "CidrIp": "0.0.0.0/0",
+            "Description": "from 0.0.0.0/0:ALL TRAFFIC",
+            "IpProtocol": "-1"
+          }
+        ],
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "DifyOnAwsStack/Vpc"
+          }
+        ],
+        "VpcId": {
+          "Ref": "Vpc8378EB38"
+        }
+      },
+      "Metadata": {
+        "aws:cdk:path": "DifyOnAwsStack/Vpc/NatSecurityGroup/Resource"
+      }
+    },
+    "VpcRestrictDefaultSecurityGroupCustomResourceC73DA2BE": {
+      "Type": "Custom::VpcRestrictDefaultSG",
+      "Properties": {
+        "ServiceToken": {
+          "Fn::GetAtt": [
+            "CustomVpcRestrictDefaultSGCustomResourceProviderHandlerDC833E5E",
+            "Arn"
+          ]
+        },
+        "DefaultSecurityGroupId": {
+          "Fn::GetAtt": [
+            "Vpc8378EB38",
+            "DefaultSecurityGroup"
+          ]
+        },
+        "Account": "515855287013"
+      },
+      "UpdateReplacePolicy": "Delete",
+      "DeletionPolicy": "Delete",
+      "Metadata": {
+        "aws:cdk:path": "DifyOnAwsStack/Vpc/RestrictDefaultSecurityGroupCustomResource/Default"
+      }
+    },
+    "CustomVpcRestrictDefaultSGCustomResourceProviderRole26592FE0": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com"
+              }
+            }
+          ]
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Sub": "arn:${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+          }
+        ],
+        "Policies": [
+          {
+            "PolicyName": "Inline",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "ec2:AuthorizeSecurityGroupIngress",
+                    "ec2:AuthorizeSecurityGroupEgress",
+                    "ec2:RevokeSecurityGroupIngress",
+                    "ec2:RevokeSecurityGroupEgress"
+                  ],
+                  "Resource": [
+                    {
+                      "Fn::Join": [
+                        "",
+                        [
+                          "arn:aws:ec2:ap-northeast-1:515855287013:security-group/",
+                          {
+                            "Fn::GetAtt": [
+                              "Vpc8378EB38",
+                              "DefaultSecurityGroup"
+                            ]
+                          }
+                        ]
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "Metadata": {
+        "aws:cdk:path": "DifyOnAwsStack/Custom::VpcRestrictDefaultSGCustomResourceProvider/Role"
+      }
+    },
+    "CustomVpcRestrictDefaultSGCustomResourceProviderHandlerDC833E5E": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Code": {
+          "S3Bucket": "cdk-hnb659fds-assets-515855287013-ap-northeast-1",
+          "S3Key": "7fa1e366ee8a9ded01fc355f704cff92bfd179574e6f9cfee800a3541df1b200.zip"
+        },
+        "Timeout": 900,
+        "MemorySize": 128,
+        "Handler": "__entrypoint__.handler",
+        "Role": {
+          "Fn::GetAtt": [
+            "CustomVpcRestrictDefaultSGCustomResourceProviderRole26592FE0",
+            "Arn"
+          ]
+        },
+        "Runtime": "nodejs20.x",
+        "Description": "Lambda function for removing all inbound/outbound rules from the VPC default security group"
+      },
+      "DependsOn": [
+        "CustomVpcRestrictDefaultSGCustomResourceProviderRole26592FE0"
+      ],
+      "Metadata": {
+        "aws:cdk:path": "DifyOnAwsStack/Custom::VpcRestrictDefaultSGCustomResourceProvider/Handler",
+        "aws:asset:path": "asset.7fa1e366ee8a9ded01fc355f704cff92bfd179574e6f9cfee800a3541df1b200",
+        "aws:asset:property": "Code"
+      }
+    },
+    "AccessLogBucketDA470295": {
+      "Type": "AWS::S3::Bucket",
+      "Properties": {
+        "OwnershipControls": {
+          "Rules": [
+            {
+              "ObjectOwnership": "ObjectWriter"
+            }
+          ]
+        },
+        "Tags": [
+          {
+            "Key": "aws-cdk:auto-delete-objects",
+            "Value": "true"
+          }
+        ]
+      },
+      "UpdateReplacePolicy": "Delete",
+      "DeletionPolicy": "Delete",
+      "Metadata": {
+        "aws:cdk:path": "DifyOnAwsStack/AccessLogBucket/Resource"
+      }
+    },
+    "AccessLogBucketPolicyF52D2D01": {
+      "Type": "AWS::S3::BucketPolicy",
+      "Properties": {
+        "Bucket": {
+          "Ref": "AccessLogBucketDA470295"
+        },
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": "s3:*",
+              "Condition": {
+                "Bool": {
+                  "aws:SecureTransport": "false"
+                }
+              },
+              "Effect": "Deny",
+              "Principal": {
+                "AWS": "*"
+              },
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "AccessLogBucketDA470295",
+                    "Arn"
+                  ]
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::GetAtt": [
+                          "AccessLogBucketDA470295",
+                          "Arn"
+                        ]
+                      },
+                      "/*"
+                    ]
+                  ]
+                }
+              ]
+            },
+            {
+              "Action": [
+                "s3:DeleteObject*",
+                "s3:GetBucket*",
+                "s3:List*",
+                "s3:PutBucketPolicy"
+              ],
+              "Effect": "Allow",
+              "Principal": {
+                "AWS": {
+                  "Fn::GetAtt": [
+                    "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092",
+                    "Arn"
+                  ]
+                }
+              },
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "AccessLogBucketDA470295",
+                    "Arn"
+                  ]
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::GetAtt": [
+                          "AccessLogBucketDA470295",
+                          "Arn"
+                        ]
+                      },
+                      "/*"
+                    ]
+                  ]
+                }
+              ]
+            },
+            {
+              "Action": "s3:PutObject",
+              "Effect": "Allow",
+              "Principal": {
+                "AWS": "arn:aws:iam::582318560864:root"
+              },
+              "Resource": {
+                "Fn::Join": [
+                  "",
+                  [
+                    {
+                      "Fn::GetAtt": [
+                        "AccessLogBucketDA470295",
+                        "Arn"
+                      ]
+                    },
+                    "/dify-alb/AWSLogs/515855287013/*"
+                  ]
+                ]
+              }
+            },
+            {
+              "Action": "s3:PutObject",
+              "Condition": {
+                "StringEquals": {
+                  "s3:x-amz-acl": "bucket-owner-full-control"
+                }
+              },
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "delivery.logs.amazonaws.com"
+              },
+              "Resource": {
+                "Fn::Join": [
+                  "",
+                  [
+                    {
+                      "Fn::GetAtt": [
+                        "AccessLogBucketDA470295",
+                        "Arn"
+                      ]
+                    },
+                    "/dify-alb/AWSLogs/515855287013/*"
+                  ]
+                ]
+              }
+            },
+            {
+              "Action": "s3:GetBucketAcl",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "delivery.logs.amazonaws.com"
+              },
+              "Resource": {
+                "Fn::GetAtt": [
+                  "AccessLogBucketDA470295",
+                  "Arn"
+                ]
+              }
+            }
+          ],
+          "Version": "2012-10-17"
+        }
+      },
+      "Metadata": {
+        "aws:cdk:path": "DifyOnAwsStack/AccessLogBucket/Policy/Resource"
+      }
+    },
+    "AccessLogBucketAutoDeleteObjectsCustomResource01AB31E8": {
+      "Type": "Custom::S3AutoDeleteObjects",
+      "Properties": {
+        "ServiceToken": {
+          "Fn::GetAtt": [
+            "CustomS3AutoDeleteObjectsCustomResourceProviderHandler9D90184F",
+            "Arn"
+          ]
+        },
+        "BucketName": {
+          "Ref": "AccessLogBucketDA470295"
+        }
+      },
+      "DependsOn": [
+        "AccessLogBucketPolicyF52D2D01"
+      ],
+      "UpdateReplacePolicy": "Delete",
+      "DeletionPolicy": "Delete",
+      "Metadata": {
+        "aws:cdk:path": "DifyOnAwsStack/AccessLogBucket/AutoDeleteObjectsCustomResource/Default"
+      }
+    },
+    "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com"
+              }
+            }
+          ]
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Sub": "arn:${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+          }
+        ]
+      },
+      "Metadata": {
+        "aws:cdk:path": "DifyOnAwsStack/Custom::S3AutoDeleteObjectsCustomResourceProvider/Role"
+      }
+    },
+    "CustomS3AutoDeleteObjectsCustomResourceProviderHandler9D90184F": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Code": {
+          "S3Bucket": "cdk-hnb659fds-assets-515855287013-ap-northeast-1",
+          "S3Key": "faa95a81ae7d7373f3e1f242268f904eb748d8d0fdd306e8a6fe515a1905a7d6.zip"
+        },
+        "Timeout": 900,
+        "MemorySize": 128,
+        "Handler": "index.handler",
+        "Role": {
+          "Fn::GetAtt": [
+            "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092",
+            "Arn"
+          ]
+        },
+        "Runtime": "nodejs20.x",
+        "Description": {
+          "Fn::Join": [
+            "",
+            [
+              "Lambda function for auto-deleting objects in ",
+              {
+                "Ref": "AccessLogBucketDA470295"
+              },
+              " S3 bucket."
+            ]
+          ]
+        }
+      },
+      "DependsOn": [
+        "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092"
+      ],
+      "Metadata": {
+        "aws:cdk:path": "DifyOnAwsStack/Custom::S3AutoDeleteObjectsCustomResourceProvider/Handler",
+        "aws:asset:path": "asset.faa95a81ae7d7373f3e1f242268f904eb748d8d0fdd306e8a6fe515a1905a7d6",
+        "aws:asset:property": "Code"
+      }
+    },
+    "ClusterEB0386A7": {
+      "Type": "AWS::ECS::Cluster",
+      "Properties": {
+        "ClusterSettings": [
+          {
+            "Name": "containerInsights",
+            "Value": "enabled"
+          }
+        ]
+      },
+      "Metadata": {
+        "aws:cdk:path": "DifyOnAwsStack/Cluster/Resource"
+      }
+    },
+    "PostgresParameterGroupC3694DF2": {
+      "Type": "AWS::RDS::DBClusterParameterGroup",
+      "Properties": {
+        "Description": "Cluster parameter group for aurora-postgresql15",
+        "Family": "aurora-postgresql15",
+        "Parameters": {
+          "idle_session_timeout": "60000"
+        }
+      },
+      "Metadata": {
+        "aws:cdk:path": "DifyOnAwsStack/Postgres/ParameterGroup/Resource"
+      }
+    },
+    "PostgresClusterSubnets99BD7A61": {
+      "Type": "AWS::RDS::DBSubnetGroup",
+      "Properties": {
+        "DBSubnetGroupDescription": "Subnets for Cluster database",
+        "SubnetIds": [
+          {
+            "Ref": "VpcPrivateSubnet1Subnet536B997A"
+          },
+          {
+            "Ref": "VpcPrivateSubnet2Subnet3788AAA1"
+          }
+        ]
+      },
+      "Metadata": {
+        "aws:cdk:path": "DifyOnAwsStack/Postgres/Cluster/Subnets/Default"
+      }
+    },
+    "PostgresClusterSecurityGroup08DE6EE8": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "RDS security group",
+        "SecurityGroupEgress": [
+          {
+            "CidrIp": "0.0.0.0/0",
+            "Description": "Allow all outbound traffic by default",
+            "IpProtocol": "-1"
+          }
+        ],
+        "VpcId": {
+          "Ref": "Vpc8378EB38"
+        }
+      },
+      "Metadata": {
+        "aws:cdk:path": "DifyOnAwsStack/Postgres/Cluster/SecurityGroup/Resource"
+      }
+    },
+    "PostgresClusterSecurityGroupfromDifyOnAwsStackApiServiceFargateServiceSecurityGroup3EE44E36IndirectPortED1E4247": {
+      "Type": "AWS::EC2::SecurityGroupIngress",
+      "Properties": {
+        "Description": "from DifyOnAwsStackApiServiceFargateServiceSecurityGroup3EE44E36:{IndirectPort}",
+        "FromPort": {
+          "Fn::GetAtt": [
+            "PostgresCluster53E5BDAB",
+            "Endpoint.Port"
+          ]
+        },
+        "GroupId": {
+          "Fn::GetAtt": [
+            "PostgresClusterSecurityGroup08DE6EE8",
+            "GroupId"
+          ]
+        },
+        "IpProtocol": "tcp",
+        "SourceSecurityGroupId": {
+          "Fn::GetAtt": [
+            "ApiServiceFargateServiceSecurityGroupE31C96C6",
+            "GroupId"
+          ]
+        },
+        "ToPort": {
+          "Fn::GetAtt": [
+            "PostgresCluster53E5BDAB",
+            "Endpoint.Port"
+          ]
+        }
+      },
+      "Metadata": {
+        "aws:cdk:path": "DifyOnAwsStack/Postgres/Cluster/SecurityGroup/from DifyOnAwsStackApiServiceFargateServiceSecurityGroup3EE44E36:{IndirectPort}"
+      }
+    },
+    "PostgresClusterSecretC5EAFDEC": {
+      "Type": "AWS::SecretsManager::Secret",
+      "Properties": {
+        "Description": {
+          "Fn::Join": [
+            "",
+            [
+              "Generated by the CDK for stack: ",
+              {
+                "Ref": "AWS::StackName"
+              }
+            ]
+          ]
+        },
+        "GenerateSecretString": {
+          "ExcludeCharacters": " %+~`#$&*()|[]{}:;<>?!'/@\"\\",
+          "GenerateStringKey": "password",
+          "PasswordLength": 30,
+          "SecretStringTemplate": "{\"username\":\"postgres\"}"
+        }
+      },
+      "UpdateReplacePolicy": "Delete",
+      "DeletionPolicy": "Delete",
+      "Metadata": {
+        "aws:cdk:path": "DifyOnAwsStack/Postgres/Cluster/Secret/Resource"
+      }
+    },
+    "PostgresClusterSecretAttachment8DDCF2A8": {
+      "Type": "AWS::SecretsManager::SecretTargetAttachment",
+      "Properties": {
+        "SecretId": {
+          "Ref": "PostgresClusterSecretC5EAFDEC"
+        },
+        "TargetId": {
+          "Ref": "PostgresCluster53E5BDAB"
+        },
+        "TargetType": "AWS::RDS::DBCluster"
+      },
+      "Metadata": {
+        "aws:cdk:path": "DifyOnAwsStack/Postgres/Cluster/Secret/Attachment/Resource"
+      }
+    },
+    "PostgresCluster53E5BDAB": {
+      "Type": "AWS::RDS::DBCluster",
+      "Properties": {
+        "CopyTagsToSnapshot": true,
+        "DBClusterParameterGroupName": {
+          "Ref": "PostgresParameterGroupC3694DF2"
+        },
+        "DBSubnetGroupName": {
+          "Ref": "PostgresClusterSubnets99BD7A61"
+        },
+        "DatabaseName": "main",
+        "EnableHttpEndpoint": true,
+        "Engine": "aurora-postgresql",
+        "EngineVersion": "15.7",
+        "MasterUserPassword": {
+          "Fn::Join": [
+            "",
+            [
+              "{{resolve:secretsmanager:",
+              {
+                "Ref": "PostgresClusterSecretC5EAFDEC"
+              },
+              ":SecretString:password::}}"
+            ]
+          ]
+        },
+        "MasterUsername": {
+          "Fn::Join": [
+            "",
+            [
+              "{{resolve:secretsmanager:",
+              {
+                "Ref": "PostgresClusterSecretC5EAFDEC"
+              },
+              ":SecretString:username::}}"
+            ]
+          ]
+        },
+        "Port": 5432,
+        "ServerlessV2ScalingConfiguration": {
+          "MaxCapacity": 2,
+          "MinCapacity": 0
+        },
+        "StorageEncrypted": true,
+        "VpcSecurityGroupIds": [
+          {
+            "Fn::GetAtt": [
+              "PostgresClusterSecurityGroup08DE6EE8",
+              "GroupId"
+            ]
+          }
+        ]
+      },
+      "UpdateReplacePolicy": "Delete",
+      "DeletionPolicy": "Delete",
+      "Metadata": {
+        "aws:cdk:path": "DifyOnAwsStack/Postgres/Cluster/Resource"
+      }
+    },
+    "PostgresClusterWriterF88DD8CC": {
+      "Type": "AWS::RDS::DBInstance",
+      "Properties": {
+        "AutoMinorVersionUpgrade": true,
+        "DBClusterIdentifier": {
+          "Ref": "PostgresCluster53E5BDAB"
+        },
+        "DBInstanceClass": "db.serverless",
+        "Engine": "aurora-postgresql",
+        "PromotionTier": 0,
+        "PubliclyAccessible": false
+      },
+      "DependsOn": [
+        "VpcPrivateSubnet1DefaultRouteBE02A9ED",
+        "VpcPrivateSubnet1RouteTableAssociation70C59FA6",
+        "VpcPrivateSubnet2DefaultRoute060D2087",
+        "VpcPrivateSubnet2RouteTableAssociationA89CAD56"
+      ],
+      "UpdateReplacePolicy": "Delete",
+      "DeletionPolicy": "Delete",
+      "Metadata": {
+        "aws:cdk:path": "DifyOnAwsStack/Postgres/Cluster/Writer/Resource"
+      }
+    },
+    "PostgresQuery0FD53F567": {
+      "Type": "Custom::AWS",
+      "Properties": {
+        "ServiceToken": {
+          "Fn::GetAtt": [
+            "AWS679f53fac002430cb0da5b7982bd22872D164C4C",
+            "Arn"
+          ]
+        },
+        "Create": {
+          "Fn::Join": [
+            "",
+            [
+              "{\"service\":\"rds-data\",\"action\":\"ExecuteStatement\",\"parameters\":{\"resourceArn\":\"arn:aws:rds:ap-northeast-1:515855287013:cluster:",
+              {
+                "Ref": "PostgresCluster53E5BDAB"
+              },
+              "\",\"secretArn\":\"",
+              {
+                "Ref": "PostgresClusterSecretAttachment8DDCF2A8"
+              },
+              "\",\"sql\":\"CREATE DATABASE pgvector;\"},\"physicalResourceId\":{\"id\":\"arn:aws:rds:ap-northeast-1:515855287013:cluster:",
+              {
+                "Ref": "PostgresCluster53E5BDAB"
+              },
+              "\"}}"
+            ]
+          ]
+        },
+        "Update": {
+          "Fn::Join": [
+            "",
+            [
+              "{\"service\":\"rds-data\",\"action\":\"ExecuteStatement\",\"parameters\":{\"resourceArn\":\"arn:aws:rds:ap-northeast-1:515855287013:cluster:",
+              {
+                "Ref": "PostgresCluster53E5BDAB"
+              },
+              "\",\"secretArn\":\"",
+              {
+                "Ref": "PostgresClusterSecretAttachment8DDCF2A8"
+              },
+              "\",\"sql\":\"CREATE DATABASE pgvector;\"},\"physicalResourceId\":{\"id\":\"arn:aws:rds:ap-northeast-1:515855287013:cluster:",
+              {
+                "Ref": "PostgresCluster53E5BDAB"
+              },
+              "\"}}"
+            ]
+          ]
+        },
+        "InstallLatestAwsSdk": false
+      },
+      "DependsOn": [
+        "PostgresQuery0CustomResourcePolicy41175230",
+        "PostgresWaitForHttpEndpointReady6D04AFAC"
+      ],
+      "UpdateReplacePolicy": "Delete",
+      "DeletionPolicy": "Delete",
+      "Metadata": {
+        "aws:cdk:path": "DifyOnAwsStack/Postgres/Query0/Resource/Default"
+      }
+    },
+    "PostgresQuery0CustomResourcePolicy41175230": {
+      "Type": "AWS::IAM::Policy",
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": "rds-data:ExecuteStatement",
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::Join": [
+                  "",
+                  [
+                    "arn:aws:rds:ap-northeast-1:515855287013:cluster:",
+                    {
+                      "Ref": "PostgresCluster53E5BDAB"
+                    }
+                  ]
+                ]
+              }
+            }
+          ],
+          "Version": "2012-10-17"
+        },
+        "PolicyName": "PostgresQuery0CustomResourcePolicy41175230",
+        "Roles": [
+          {
+            "Ref": "AWS679f53fac002430cb0da5b7982bd2287ServiceRoleC1EA0FF2"
+          }
+        ]
+      },
+      "Metadata": {
+        "aws:cdk:path": "DifyOnAwsStack/Postgres/Query0/CustomResourcePolicy/Resource"
+      }
+    },
+    "PostgresWaitForHttpEndpointReady6D04AFAC": {
+      "Type": "Custom::TimeSleep",
+      "Properties": {
+        "ServiceToken": {
+          "Fn::GetAtt": [
+            "TimeSleepCustomResourceHandler494c1b460d2f4e3b9bfd0b2cf10162f981117264",
+            "Arn"
+          ]
+        },
+        "createDurationSeconds": 60,
+        "destroyDurationSeconds": 0
+      },
+      "DependsOn": [
+        "PostgresClusterWriterF88DD8CC"
+      ],
+      "UpdateReplacePolicy": "Delete",
+      "DeletionPolicy": "Delete",
+      "Metadata": {
+        "aws:cdk:path": "DifyOnAwsStack/Postgres/WaitForHttpEndpointReady/Default/Default"
+      }
+    },
+    "PostgresQuery1B175C979": {
+      "Type": "Custom::AWS",
+      "Properties": {
+        "ServiceToken": {
+          "Fn::GetAtt": [
+            "AWS679f53fac002430cb0da5b7982bd22872D164C4C",
+            "Arn"
+          ]
+        },
+        "Create": {
+          "Fn::Join": [
+            "",
+            [
+              "{\"service\":\"rds-data\",\"action\":\"ExecuteStatement\",\"parameters\":{\"resourceArn\":\"arn:aws:rds:ap-northeast-1:515855287013:cluster:",
+              {
+                "Ref": "PostgresCluster53E5BDAB"
+              },
+              "\",\"secretArn\":\"",
+              {
+                "Ref": "PostgresClusterSecretAttachment8DDCF2A8"
+              },
+              "\",\"database\":\"pgvector\",\"sql\":\"CREATE EXTENSION IF NOT EXISTS vector;\"},\"physicalResourceId\":{\"id\":\"arn:aws:rds:ap-northeast-1:515855287013:cluster:",
+              {
+                "Ref": "PostgresCluster53E5BDAB"
+              },
+              "\"}}"
+            ]
+          ]
+        },
+        "Update": {
+          "Fn::Join": [
+            "",
+            [
+              "{\"service\":\"rds-data\",\"action\":\"ExecuteStatement\",\"parameters\":{\"resourceArn\":\"arn:aws:rds:ap-northeast-1:515855287013:cluster:",
+              {
+                "Ref": "PostgresCluster53E5BDAB"
+              },
+              "\",\"secretArn\":\"",
+              {
+                "Ref": "PostgresClusterSecretAttachment8DDCF2A8"
+              },
+              "\",\"database\":\"pgvector\",\"sql\":\"CREATE EXTENSION IF NOT EXISTS vector;\"},\"physicalResourceId\":{\"id\":\"arn:aws:rds:ap-northeast-1:515855287013:cluster:",
+              {
+                "Ref": "PostgresCluster53E5BDAB"
+              },
+              "\"}}"
+            ]
+          ]
+        },
+        "InstallLatestAwsSdk": false
+      },
+      "DependsOn": [
+        "PostgresQuery0FD53F567",
+        "PostgresQuery1CustomResourcePolicy1E34BE89"
+      ],
+      "UpdateReplacePolicy": "Delete",
+      "DeletionPolicy": "Delete",
+      "Metadata": {
+        "aws:cdk:path": "DifyOnAwsStack/Postgres/Query1/Resource/Default"
+      }
+    },
+    "PostgresQuery1CustomResourcePolicy1E34BE89": {
+      "Type": "AWS::IAM::Policy",
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": "rds-data:ExecuteStatement",
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::Join": [
+                  "",
+                  [
+                    "arn:aws:rds:ap-northeast-1:515855287013:cluster:",
+                    {
+                      "Ref": "PostgresCluster53E5BDAB"
+                    }
+                  ]
+                ]
+              }
+            }
+          ],
+          "Version": "2012-10-17"
+        },
+        "PolicyName": "PostgresQuery1CustomResourcePolicy1E34BE89",
+        "Roles": [
+          {
+            "Ref": "AWS679f53fac002430cb0da5b7982bd2287ServiceRoleC1EA0FF2"
+          }
+        ]
+      },
+      "Metadata": {
+        "aws:cdk:path": "DifyOnAwsStack/Postgres/Query1/CustomResourcePolicy/Resource"
+      }
+    },
+    "AWS679f53fac002430cb0da5b7982bd2287ServiceRoleC1EA0FF2": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com"
+              }
+            }
+          ],
+          "Version": "2012-10-17"
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition"
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+              ]
+            ]
+          }
+        ]
+      },
+      "Metadata": {
+        "aws:cdk:path": "DifyOnAwsStack/AWS679f53fac002430cb0da5b7982bd2287/ServiceRole/Resource"
+      }
+    },
+    "AWS679f53fac002430cb0da5b7982bd2287ServiceRoleDefaultPolicyD28E1A5E": {
+      "Type": "AWS::IAM::Policy",
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "secretsmanager:DescribeSecret",
+                "secretsmanager:GetSecretValue"
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Ref": "PostgresClusterSecretAttachment8DDCF2A8"
+              }
+            },
+            {
+              "Action": [
+                "rds-data:BatchExecuteStatement",
+                "rds-data:BeginTransaction",
+                "rds-data:CommitTransaction",
+                "rds-data:ExecuteStatement",
+                "rds-data:RollbackTransaction"
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::Join": [
+                  "",
+                  [
+                    "arn:aws:rds:ap-northeast-1:515855287013:cluster:",
+                    {
+                      "Ref": "PostgresCluster53E5BDAB"
+                    }
+                  ]
+                ]
+              }
+            }
+          ],
+          "Version": "2012-10-17"
+        },
+        "PolicyName": "AWS679f53fac002430cb0da5b7982bd2287ServiceRoleDefaultPolicyD28E1A5E",
+        "Roles": [
+          {
+            "Ref": "AWS679f53fac002430cb0da5b7982bd2287ServiceRoleC1EA0FF2"
+          }
+        ]
+      },
+      "Metadata": {
+        "aws:cdk:path": "DifyOnAwsStack/AWS679f53fac002430cb0da5b7982bd2287/ServiceRole/DefaultPolicy/Resource"
+      }
+    },
+    "AWS679f53fac002430cb0da5b7982bd22872D164C4C": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Code": {
+          "S3Bucket": "cdk-hnb659fds-assets-515855287013-ap-northeast-1",
+          "S3Key": "9d043014be736e8162bcc7ec5590cc6d2ff24fd0d9c73a5c5d595151c5fdad00.zip"
+        },
+        "Handler": "index.handler",
+        "Role": {
+          "Fn::GetAtt": [
+            "AWS679f53fac002430cb0da5b7982bd2287ServiceRoleC1EA0FF2",
+            "Arn"
+          ]
+        },
+        "Runtime": "nodejs20.x",
+        "Timeout": 120
+      },
+      "DependsOn": [
+        "AWS679f53fac002430cb0da5b7982bd2287ServiceRoleDefaultPolicyD28E1A5E",
+        "AWS679f53fac002430cb0da5b7982bd2287ServiceRoleC1EA0FF2"
+      ],
+      "Metadata": {
+        "aws:cdk:path": "DifyOnAwsStack/AWS679f53fac002430cb0da5b7982bd2287/Resource",
+        "aws:asset:path": "asset.9d043014be736e8162bcc7ec5590cc6d2ff24fd0d9c73a5c5d595151c5fdad00",
+        "aws:asset:is-bundled": false,
+        "aws:asset:property": "Code"
+      }
+    },
+    "TimeSleepCustomResourceHandler494c1b460d2f4e3b9bfd0b2cf10162f9ServiceRole47E386BD": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com"
+              }
+            }
+          ],
+          "Version": "2012-10-17"
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition"
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+              ]
+            ]
+          }
+        ]
+      },
+      "Metadata": {
+        "aws:cdk:path": "DifyOnAwsStack/TimeSleepCustomResourceHandler494c1b460d2f4e3b9bfd0b2cf10162f9/ServiceRole/Resource"
+      }
+    },
+    "TimeSleepCustomResourceHandler494c1b460d2f4e3b9bfd0b2cf10162f981117264": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Code": {
+          "ZipFile": "\"use strict\";var o=Object.defineProperty;var n=Object.getOwnPropertyDescriptor;var d=Object.getOwnPropertyNames;var p=Object.prototype.hasOwnProperty;var u=(t,e)=>{for(var s in e)o(t,s,{get:e[s],enumerable:!0})},R=(t,e,s,a)=>{if(e&&typeof e==\"object\"||typeof e==\"function\")for(let r of d(e))!p.call(t,r)&&r!==s&&o(t,r,{get:()=>e[r],enumerable:!(a=n(e,r))||a.enumerable});return t};var S=t=>R(o({},\"__esModule\",{value:!0}),t);var l={};u(l,{handler:()=>g});module.exports=S(l);var c=require(\"timers/promises\"),g=async(t,e)=>{try{switch(t.RequestType){case\"Create\":await(0,c.setTimeout)(t.ResourceProperties.createDurationSeconds*1e3);break;case\"Update\":break;case\"Delete\":await(0,c.setTimeout)(t.ResourceProperties.destroyDurationSeconds*1e3);break}await i(\"SUCCESS\",t,e)}catch(s){console.log(s),await i(\"FAILED\",t,e,s.message)}},i=async(t,e,s,a)=>{let r=JSON.stringify({Status:t,Reason:a??\"See the details in CloudWatch Log Stream: \"+s.logStreamName,PhysicalResourceId:s.logStreamName,StackId:e.StackId,RequestId:e.RequestId,LogicalResourceId:e.LogicalResourceId,NoEcho:!1,Data:{}});await fetch(e.ResponseURL,{method:\"PUT\",body:r,headers:{\"Content-Type\":\"\",\"Content-Length\":r.length.toString()}})};0&&(module.exports={handler});\n"
+        },
+        "Handler": "index.handler",
+        "MemorySize": 128,
+        "Role": {
+          "Fn::GetAtt": [
+            "TimeSleepCustomResourceHandler494c1b460d2f4e3b9bfd0b2cf10162f9ServiceRole47E386BD",
+            "Arn"
+          ]
+        },
+        "Runtime": "nodejs18.x",
+        "Timeout": 900
+      },
+      "DependsOn": [
+        "TimeSleepCustomResourceHandler494c1b460d2f4e3b9bfd0b2cf10162f9ServiceRole47E386BD"
+      ],
+      "Metadata": {
+        "aws:cdk:path": "DifyOnAwsStack/TimeSleepCustomResourceHandler494c1b460d2f4e3b9bfd0b2cf10162f9/Resource"
+      }
+    },
+    "RedisSubnetGroup2387CBFF": {
+      "Type": "AWS::ElastiCache::SubnetGroup",
+      "Properties": {
+        "Description": "Dify ElastiCache subnets",
+        "SubnetIds": [
+          {
+            "Ref": "VpcPrivateSubnet1Subnet536B997A"
+          },
+          {
+            "Ref": "VpcPrivateSubnet2Subnet3788AAA1"
+          }
+        ]
+      },
+      "Metadata": {
+        "aws:cdk:path": "DifyOnAwsStack/Redis/SubnetGroup"
+      }
+    },
+    "RedisSecurityGroupC1E9FD21": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "DifyOnAwsStack/Redis/SecurityGroup",
+        "SecurityGroupEgress": [
+          {
+            "CidrIp": "0.0.0.0/0",
+            "Description": "Allow all outbound traffic by default",
+            "IpProtocol": "-1"
+          }
+        ],
+        "VpcId": {
+          "Ref": "Vpc8378EB38"
+        }
+      },
+      "Metadata": {
+        "aws:cdk:path": "DifyOnAwsStack/Redis/SecurityGroup/Resource"
+      }
+    },
+    "RedisSecurityGroupfromDifyOnAwsStackApiServiceFargateServiceSecurityGroup3EE44E36637901F0AB03": {
+      "Type": "AWS::EC2::SecurityGroupIngress",
+      "Properties": {
+        "Description": "from DifyOnAwsStackApiServiceFargateServiceSecurityGroup3EE44E36:6379",
+        "FromPort": 6379,
+        "GroupId": {
+          "Fn::GetAtt": [
+            "RedisSecurityGroupC1E9FD21",
+            "GroupId"
+          ]
+        },
+        "IpProtocol": "tcp",
+        "SourceSecurityGroupId": {
+          "Fn::GetAtt": [
+            "ApiServiceFargateServiceSecurityGroupE31C96C6",
+            "GroupId"
+          ]
+        },
+        "ToPort": 6379
+      },
+      "Metadata": {
+        "aws:cdk:path": "DifyOnAwsStack/Redis/SecurityGroup/from DifyOnAwsStackApiServiceFargateServiceSecurityGroup3EE44E36:6379"
+      }
+    },
+    "RedisAuthToken9E34F6A5": {
+      "Type": "AWS::SecretsManager::Secret",
+      "Properties": {
+        "GenerateSecretString": {
+          "ExcludePunctuation": true,
+          "PasswordLength": 30
+        }
+      },
+      "UpdateReplacePolicy": "Delete",
+      "DeletionPolicy": "Delete",
+      "Metadata": {
+        "aws:cdk:path": "DifyOnAwsStack/Redis/AuthToken/Resource"
+      }
+    },
+    "RedisFF642DF2": {
+      "Type": "AWS::ElastiCache::ReplicationGroup",
+      "Properties": {
+        "AtRestEncryptionEnabled": true,
+        "AuthToken": {
+          "Fn::Join": [
+            "",
+            [
+              "{{resolve:secretsmanager:",
+              {
+                "Ref": "RedisAuthToken9E34F6A5"
+              },
+              ":SecretString:::}}"
+            ]
+          ]
+        },
+        "AutomaticFailoverEnabled": false,
+        "CacheNodeType": "cache.t4g.micro",
+        "CacheParameterGroupName": "default.valkey8",
+        "CacheSubnetGroupName": {
+          "Ref": "RedisSubnetGroup2387CBFF"
+        },
+        "Engine": "Valkey",
+        "EngineVersion": "8.0",
+        "MultiAZEnabled": false,
+        "NumNodeGroups": 1,
+        "Port": 6379,
+        "ReplicasPerNodeGroup": 0,
+        "ReplicationGroupDescription": "Dify cache/queue cluster",
+        "SecurityGroupIds": [
+          {
+            "Fn::GetAtt": [
+              "RedisSecurityGroupC1E9FD21",
+              "GroupId"
+            ]
+          }
+        ],
+        "TransitEncryptionEnabled": true
+      },
+      "Metadata": {
+        "aws:cdk:path": "DifyOnAwsStack/Redis/Resource"
+      }
+    },
+    "RedisBrokerUrlA8582E06": {
+      "Type": "AWS::SSM::Parameter",
+      "Properties": {
+        "Type": "String",
+        "Value": {
+          "Fn::Join": [
+            "",
+            [
+              "rediss://:{{resolve:secretsmanager:",
+              {
+                "Ref": "RedisAuthToken9E34F6A5"
+              },
+              ":SecretString:::}}@",
+              {
+                "Fn::GetAtt": [
+                  "RedisFF642DF2",
+                  "PrimaryEndPoint.Address"
+                ]
+              },
+              ":6379/1"
+            ]
+          ]
+        }
+      },
+      "Metadata": {
+        "aws:cdk:path": "DifyOnAwsStack/Redis/BrokerUrl/Resource"
+      }
+    },
+    "StorageBucket19DB2FF8": {
+      "Type": "AWS::S3::Bucket",
+      "Properties": {
+        "PublicAccessBlockConfiguration": {
+          "BlockPublicAcls": true,
+          "BlockPublicPolicy": true,
+          "IgnorePublicAcls": true,
+          "RestrictPublicBuckets": true
+        },
+        "Tags": [
+          {
+            "Key": "aws-cdk:auto-delete-objects",
+            "Value": "true"
+          }
+        ]
+      },
+      "UpdateReplacePolicy": "Delete",
+      "DeletionPolicy": "Delete",
+      "Metadata": {
+        "aws:cdk:path": "DifyOnAwsStack/StorageBucket/Resource"
+      }
+    },
+    "StorageBucketPolicy41A048DB": {
+      "Type": "AWS::S3::BucketPolicy",
+      "Properties": {
+        "Bucket": {
+          "Ref": "StorageBucket19DB2FF8"
+        },
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": "s3:*",
+              "Condition": {
+                "Bool": {
+                  "aws:SecureTransport": "false"
+                }
+              },
+              "Effect": "Deny",
+              "Principal": {
+                "AWS": "*"
+              },
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "StorageBucket19DB2FF8",
+                    "Arn"
+                  ]
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::GetAtt": [
+                          "StorageBucket19DB2FF8",
+                          "Arn"
+                        ]
+                      },
+                      "/*"
+                    ]
+                  ]
+                }
+              ]
+            },
+            {
+              "Action": [
+                "s3:DeleteObject*",
+                "s3:GetBucket*",
+                "s3:List*",
+                "s3:PutBucketPolicy"
+              ],
+              "Effect": "Allow",
+              "Principal": {
+                "AWS": {
+                  "Fn::GetAtt": [
+                    "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092",
+                    "Arn"
+                  ]
+                }
+              },
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "StorageBucket19DB2FF8",
+                    "Arn"
+                  ]
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::GetAtt": [
+                          "StorageBucket19DB2FF8",
+                          "Arn"
+                        ]
+                      },
+                      "/*"
+                    ]
+                  ]
+                }
+              ]
+            }
+          ],
+          "Version": "2012-10-17"
+        }
+      },
+      "Metadata": {
+        "aws:cdk:path": "DifyOnAwsStack/StorageBucket/Policy/Resource"
+      }
+    },
+    "StorageBucketAutoDeleteObjectsCustomResource105C81BD": {
+      "Type": "Custom::S3AutoDeleteObjects",
+      "Properties": {
+        "ServiceToken": {
+          "Fn::GetAtt": [
+            "CustomS3AutoDeleteObjectsCustomResourceProviderHandler9D90184F",
+            "Arn"
+          ]
+        },
+        "BucketName": {
+          "Ref": "StorageBucket19DB2FF8"
+        }
+      },
+      "DependsOn": [
+        "StorageBucketPolicy41A048DB"
+      ],
+      "UpdateReplacePolicy": "Delete",
+      "DeletionPolicy": "Delete",
+      "Metadata": {
+        "aws:cdk:path": "DifyOnAwsStack/StorageBucket/AutoDeleteObjectsCustomResource/Default"
+      }
+    },
+    "AlbC1372A32": {
+      "Type": "AWS::ElasticLoadBalancingV2::LoadBalancer",
+      "Properties": {
+        "LoadBalancerAttributes": [
+          {
+            "Key": "deletion_protection.enabled",
+            "Value": "false"
+          },
+          {
+            "Key": "access_logs.s3.enabled",
+            "Value": "true"
+          },
+          {
+            "Key": "access_logs.s3.bucket",
+            "Value": {
+              "Ref": "AccessLogBucketDA470295"
+            }
+          },
+          {
+            "Key": "access_logs.s3.prefix",
+            "Value": "dify-alb"
+          }
+        ],
+        "Scheme": "internal",
+        "SecurityGroups": [
+          {
+            "Fn::GetAtt": [
+              "AlbSecurityGroup433229ED",
+              "GroupId"
+            ]
+          }
+        ],
+        "Subnets": [
+          {
+            "Ref": "VpcPrivateSubnet1Subnet536B997A"
+          },
+          {
+            "Ref": "VpcPrivateSubnet2Subnet3788AAA1"
+          }
+        ],
+        "Type": "application"
+      },
+      "DependsOn": [
+        "AccessLogBucketPolicyF52D2D01"
+      ],
+      "Metadata": {
+        "aws:cdk:path": "DifyOnAwsStack/Alb/Resource/Resource"
+      }
+    },
+    "AlbSecurityGroup433229ED": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "Automatically created Security Group for ELB DifyOnAwsStackAlb377D291F",
+        "VpcId": {
+          "Ref": "Vpc8378EB38"
+        }
+      },
+      "Metadata": {
+        "aws:cdk:path": "DifyOnAwsStack/Alb/Resource/SecurityGroup/Resource"
+      }
+    },
+    "AlbSecurityGroupfromIndirectPeer8094DF45A1": {
+      "Type": "AWS::EC2::SecurityGroupIngress",
+      "Properties": {
+        "Description": {
+          "Fn::Join": [
+            "",
+            [
+              "from ",
+              {
+                "Fn::GetAtt": [
+                  "AlbGetCloudFrontPrefixListId0ED122F4",
+                  "PrefixLists.0.PrefixListId"
+                ]
+              },
+              ":80"
+            ]
+          ]
+        },
+        "FromPort": 80,
+        "GroupId": {
+          "Fn::GetAtt": [
+            "AlbSecurityGroup433229ED",
+            "GroupId"
+          ]
+        },
+        "IpProtocol": "tcp",
+        "SourcePrefixListId": {
+          "Fn::GetAtt": [
+            "AlbGetCloudFrontPrefixListId0ED122F4",
+            "PrefixLists.0.PrefixListId"
+          ]
+        },
+        "ToPort": 80
+      },
+      "Metadata": {
+        "aws:cdk:path": "DifyOnAwsStack/Alb/Resource/SecurityGroup/from {IndirectPeer}:80"
+      }
+    },
+    "AlbSecurityGrouptoDifyOnAwsStackApiServiceFargateServiceSecurityGroup3EE44E3650017291F2AE": {
+      "Type": "AWS::EC2::SecurityGroupEgress",
+      "Properties": {
+        "Description": "Load balancer to target",
+        "DestinationSecurityGroupId": {
+          "Fn::GetAtt": [
+            "ApiServiceFargateServiceSecurityGroupE31C96C6",
+            "GroupId"
+          ]
+        },
+        "FromPort": 5001,
+        "GroupId": {
+          "Fn::GetAtt": [
+            "AlbSecurityGroup433229ED",
+            "GroupId"
+          ]
+        },
+        "IpProtocol": "tcp",
+        "ToPort": 5001
+      },
+      "Metadata": {
+        "aws:cdk:path": "DifyOnAwsStack/Alb/Resource/SecurityGroup/to DifyOnAwsStackApiServiceFargateServiceSecurityGroup3EE44E36:5001"
+      }
+    },
+    "AlbSecurityGrouptoDifyOnAwsStackWebServiceFargateServiceSecurityGroupD4ED8B22300019B7E301": {
+      "Type": "AWS::EC2::SecurityGroupEgress",
+      "Properties": {
+        "Description": "Load balancer to target",
+        "DestinationSecurityGroupId": {
+          "Fn::GetAtt": [
+            "WebServiceFargateServiceSecurityGroup60FE78D6",
+            "GroupId"
+          ]
+        },
+        "FromPort": 3000,
+        "GroupId": {
+          "Fn::GetAtt": [
+            "AlbSecurityGroup433229ED",
+            "GroupId"
+          ]
+        },
+        "IpProtocol": "tcp",
+        "ToPort": 3000
+      },
+      "Metadata": {
+        "aws:cdk:path": "DifyOnAwsStack/Alb/Resource/SecurityGroup/to DifyOnAwsStackWebServiceFargateServiceSecurityGroupD4ED8B22:3000"
+      }
+    },
+    "AlbListener318AEEBA": {
+      "Type": "AWS::ElasticLoadBalancingV2::Listener",
+      "Properties": {
+        "DefaultActions": [
+          {
+            "FixedResponseConfig": {
+              "StatusCode": "400"
+            },
+            "Type": "fixed-response"
+          }
+        ],
+        "LoadBalancerArn": {
+          "Ref": "AlbC1372A32"
+        },
+        "Port": 80,
+        "Protocol": "HTTP"
+      },
+      "Metadata": {
+        "aws:cdk:path": "DifyOnAwsStack/Alb/Resource/Listener/Resource"
+      }
+    },
+    "AlbListenerApi0Rule033B7A48": {
+      "Type": "AWS::ElasticLoadBalancingV2::ListenerRule",
+      "Properties": {
+        "Actions": [
+          {
+            "TargetGroupArn": {
+              "Ref": "AlbApiTargetGroupInternal2EB9930E"
+            },
+            "Type": "forward"
+          }
+        ],
+        "Conditions": [
+          {
+            "Field": "path-pattern",
+            "PathPatternConfig": {
+              "Values": [
+                "/console/api",
+                "/api",
+                "/v1",
+                "/files",
+                "/console/api/*"
+              ]
+            }
+          }
+        ],
+        "ListenerArn": {
+          "Ref": "AlbListener318AEEBA"
+        },
+        "Priority": 1
+      },
+      "Metadata": {
+        "aws:cdk:path": "DifyOnAwsStack/Alb/Resource/Listener/Api0Rule/Resource"
+      }
+    },
+    "AlbListenerApi1RuleDF535F10": {
+      "Type": "AWS::ElasticLoadBalancingV2::ListenerRule",
+      "Properties": {
+        "Actions": [
+          {
+            "TargetGroupArn": {
+              "Ref": "AlbApiTargetGroupInternal2EB9930E"
+            },
+            "Type": "forward"
+          }
+        ],
+        "Conditions": [
+          {
+            "Field": "path-pattern",
+            "PathPatternConfig": {
+              "Values": [
+                "/api/*",
+                "/v1/*",
+                "/files/*"
+              ]
+            }
+          }
+        ],
+        "ListenerArn": {
+          "Ref": "AlbListener318AEEBA"
+        },
+        "Priority": 2
+      },
+      "Metadata": {
+        "aws:cdk:path": "DifyOnAwsStack/Alb/Resource/Listener/Api1Rule/Resource"
+      }
+    },
+    "AlbListenerWeb0RuleE10BEE0F": {
+      "Type": "AWS::ElasticLoadBalancingV2::ListenerRule",
+      "Properties": {
+        "Actions": [
+          {
+            "TargetGroupArn": {
+              "Ref": "AlbWebTargetGroupInternal92BC2C4D"
+            },
+            "Type": "forward"
+          }
+        ],
+        "Conditions": [
+          {
+            "Field": "path-pattern",
+            "PathPatternConfig": {
+              "Values": [
+                "/*"
+              ]
+            }
+          }
+        ],
+        "ListenerArn": {
+          "Ref": "AlbListener318AEEBA"
+        },
+        "Priority": 3
+      },
+      "Metadata": {
+        "aws:cdk:path": "DifyOnAwsStack/Alb/Resource/Listener/Web0Rule/Resource"
+      }
+    },
+    "AlbGetCloudFrontPrefixListId0ED122F4": {
+      "Type": "Custom::AWS",
+      "Properties": {
+        "ServiceToken": {
+          "Fn::GetAtt": [
+            "AWS679f53fac002430cb0da5b7982bd22872D164C4C",
+            "Arn"
+          ]
+        },
+        "Create": "{\"service\":\"ec2\",\"action\":\"describeManagedPrefixLists\",\"parameters\":{\"Filters\":[{\"Name\":\"prefix-list-name\",\"Values\":[\"com.amazonaws.global.cloudfront.origin-facing\"]}]},\"physicalResourceId\":{\"id\":\"static\"},\"outputPaths\":[\"PrefixLists.0.PrefixListId\"]}",
+        "Update": "{\"service\":\"ec2\",\"action\":\"describeManagedPrefixLists\",\"parameters\":{\"Filters\":[{\"Name\":\"prefix-list-name\",\"Values\":[\"com.amazonaws.global.cloudfront.origin-facing\"]}]},\"physicalResourceId\":{\"id\":\"static\"},\"outputPaths\":[\"PrefixLists.0.PrefixListId\"]}",
+        "InstallLatestAwsSdk": false
+      },
+      "DependsOn": [
+        "AlbGetCloudFrontPrefixListIdCustomResourcePolicyB4DDE84F"
+      ],
+      "UpdateReplacePolicy": "Delete",
+      "DeletionPolicy": "Delete",
+      "Metadata": {
+        "aws:cdk:path": "DifyOnAwsStack/Alb/GetCloudFrontPrefixListId/Resource/Default"
+      }
+    },
+    "AlbGetCloudFrontPrefixListIdCustomResourcePolicyB4DDE84F": {
+      "Type": "AWS::IAM::Policy",
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": "ec2:DescribeManagedPrefixLists",
+              "Effect": "Allow",
+              "Resource": "*"
+            }
+          ],
+          "Version": "2012-10-17"
+        },
+        "PolicyName": "AlbGetCloudFrontPrefixListIdCustomResourcePolicyB4DDE84F",
+        "Roles": [
+          {
+            "Ref": "AWS679f53fac002430cb0da5b7982bd2287ServiceRoleC1EA0FF2"
+          }
+        ]
+      },
+      "Metadata": {
+        "aws:cdk:path": "DifyOnAwsStack/Alb/GetCloudFrontPrefixListId/CustomResourcePolicy/Resource"
+      }
+    },
+    "AlbDistribution42730BA5": {
+      "Type": "AWS::CloudFront::Distribution",
+      "Properties": {
+        "DistributionConfig": {
+          "Comment": "Dify distribution (DifyOnAwsStack - ap-northeast-1)",
+          "DefaultCacheBehavior": {
+            "AllowedMethods": [
+              "GET",
+              "HEAD",
+              "OPTIONS",
+              "PUT",
+              "PATCH",
+              "POST",
+              "DELETE"
+            ],
+            "CachePolicyId": "4cc15a8a-d715-48a4-82b8-cc0b614638fe",
+            "Compress": true,
+            "OriginRequestPolicyId": "216adef6-5c7f-47e4-b989-5492eafa07d3",
+            "TargetOriginId": "VpcOriginV2",
+            "ViewerProtocolPolicy": "redirect-to-https"
+          },
+          "Enabled": true,
+          "HttpVersion": "http2",
+          "IPV6Enabled": true,
+          "Logging": {
+            "Bucket": {
+              "Fn::GetAtt": [
+                "AccessLogBucketDA470295",
+                "RegionalDomainName"
+              ]
+            },
+            "Prefix": "dify-cloudfront/"
+          },
+          "Origins": [
+            {
+              "DomainName": {
+                "Fn::GetAtt": [
+                  "AlbC1372A32",
+                  "DNSName"
+                ]
+              },
+              "Id": "VpcOriginV2",
+              "VpcOriginConfig": {
+                "VpcOriginId": {
+                  "Fn::GetAtt": [
+                    "AlbVpcOriginV25EF6E242",
+                    "Id"
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      },
+      "Metadata": {
+        "aws:cdk:path": "DifyOnAwsStack/Alb/Distribution/Resource"
+      }
+    },
+    "AlbVpcOriginV25EF6E242": {
+      "Type": "AWS::CloudFront::VpcOrigin",
+      "Properties": {
+        "VpcOriginEndpointConfig": {
+          "Arn": {
+            "Ref": "AlbC1372A32"
+          },
+          "HTTPPort": 80,
+          "Name": "DifyOnAwsStack-Alb-E7696D52-ap-northeast-1",
+          "OriginProtocolPolicy": "http-only"
+        }
+      },
+      "Metadata": {
+        "aws:cdk:path": "DifyOnAwsStack/Alb/VpcOriginV2"
+      }
+    },
+    "AlbApiTargetGroupInternal2EB9930E": {
+      "Type": "AWS::ElasticLoadBalancingV2::TargetGroup",
+      "Properties": {
+        "HealthCheckIntervalSeconds": 20,
+        "HealthCheckPath": "/health",
+        "HealthyThresholdCount": 2,
+        "Matcher": {
+          "HttpCode": "200-299,307"
+        },
+        "Port": 5001,
+        "Protocol": "HTTP",
+        "TargetGroupAttributes": [
+          {
+            "Key": "deregistration_delay.timeout_seconds",
+            "Value": "10"
+          },
+          {
+            "Key": "stickiness.enabled",
+            "Value": "false"
+          }
+        ],
+        "TargetType": "ip",
+        "UnhealthyThresholdCount": 6,
+        "VpcId": {
+          "Ref": "Vpc8378EB38"
+        }
+      },
+      "Metadata": {
+        "aws:cdk:path": "DifyOnAwsStack/Alb/ApiTargetGroupInternal/Resource"
+      }
+    },
+    "AlbWebTargetGroupInternal92BC2C4D": {
+      "Type": "AWS::ElasticLoadBalancingV2::TargetGroup",
+      "Properties": {
+        "HealthCheckIntervalSeconds": 20,
+        "HealthCheckPath": "/",
+        "HealthyThresholdCount": 2,
+        "Matcher": {
+          "HttpCode": "200-299,307"
+        },
+        "Port": 3000,
+        "Protocol": "HTTP",
+        "TargetGroupAttributes": [
+          {
+            "Key": "deregistration_delay.timeout_seconds",
+            "Value": "10"
+          },
+          {
+            "Key": "stickiness.enabled",
+            "Value": "false"
+          }
+        ],
+        "TargetType": "ip",
+        "UnhealthyThresholdCount": 6,
+        "VpcId": {
+          "Ref": "Vpc8378EB38"
+        }
+      },
+      "Metadata": {
+        "aws:cdk:path": "DifyOnAwsStack/Alb/WebTargetGroupInternal/Resource"
+      }
+    },
+    "ApiServiceTaskTaskRole06F87EBE": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "ecs-tasks.amazonaws.com"
+              }
+            }
+          ],
+          "Version": "2012-10-17"
+        }
+      },
+      "Metadata": {
+        "aws:cdk:path": "DifyOnAwsStack/ApiService/Task/TaskRole/Resource"
+      }
+    },
+    "ApiServiceTaskTaskRoleDefaultPolicy982AD2DC": {
+      "Type": "AWS::IAM::Policy",
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "s3:Abort*",
+                "s3:DeleteObject*",
+                "s3:GetBucket*",
+                "s3:GetObject*",
+                "s3:List*",
+                "s3:PutObject",
+                "s3:PutObjectLegalHold",
+                "s3:PutObjectRetention",
+                "s3:PutObjectTagging",
+                "s3:PutObjectVersionTagging"
+              ],
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "StorageBucket19DB2FF8",
+                    "Arn"
+                  ]
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::GetAtt": [
+                          "StorageBucket19DB2FF8",
+                          "Arn"
+                        ]
+                      },
+                      "/*"
+                    ]
+                  ]
+                }
+              ]
+            },
+            {
+              "Action": [
+                "bedrock:InvokeModel",
+                "bedrock:InvokeModelWithResponseStream",
+                "bedrock:Rerank",
+                "bedrock:Retrieve",
+                "bedrock:RetrieveAndGenerate",
+                "logs:CreateLogStream",
+                "logs:DescribeLogGroups",
+                "logs:DescribeLogStreams",
+                "logs:PutLogEvents",
+                "ssmmessages:CreateControlChannel",
+                "ssmmessages:CreateDataChannel",
+                "ssmmessages:OpenControlChannel",
+                "ssmmessages:OpenDataChannel"
+              ],
+              "Effect": "Allow",
+              "Resource": "*"
+            }
+          ],
+          "Version": "2012-10-17"
+        },
+        "PolicyName": "ApiServiceTaskTaskRoleDefaultPolicy982AD2DC",
+        "Roles": [
+          {
+            "Ref": "ApiServiceTaskTaskRole06F87EBE"
+          }
+        ]
+      },
+      "Metadata": {
+        "aws:cdk:path": "DifyOnAwsStack/ApiService/Task/TaskRole/DefaultPolicy/Resource"
+      }
+    },
+    "ApiServiceTask878B1807": {
+      "Type": "AWS::ECS::TaskDefinition",
+      "Properties": {
+        "ContainerDefinitions": [
+          {
+            "Environment": [
+              {
+                "Name": "MODE",
+                "Value": "api"
+              },
+              {
+                "Name": "LOG_LEVEL",
+                "Value": "ERROR"
+              },
+              {
+                "Name": "DEBUG",
+                "Value": "false"
+              },
+              {
+                "Name": "CONSOLE_WEB_URL",
+                "Value": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "https://",
+                      {
+                        "Fn::GetAtt": [
+                          "AlbDistribution42730BA5",
+                          "DomainName"
+                        ]
+                      }
+                    ]
+                  ]
+                }
+              },
+              {
+                "Name": "CONSOLE_API_URL",
+                "Value": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "https://",
+                      {
+                        "Fn::GetAtt": [
+                          "AlbDistribution42730BA5",
+                          "DomainName"
+                        ]
+                      }
+                    ]
+                  ]
+                }
+              },
+              {
+                "Name": "SERVICE_API_URL",
+                "Value": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "https://",
+                      {
+                        "Fn::GetAtt": [
+                          "AlbDistribution42730BA5",
+                          "DomainName"
+                        ]
+                      }
+                    ]
+                  ]
+                }
+              },
+              {
+                "Name": "APP_WEB_URL",
+                "Value": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "https://",
+                      {
+                        "Fn::GetAtt": [
+                          "AlbDistribution42730BA5",
+                          "DomainName"
+                        ]
+                      }
+                    ]
+                  ]
+                }
+              },
+              {
+                "Name": "SQLALCHEMY_POOL_PRE_PING",
+                "Value": "True"
+              },
+              {
+                "Name": "REDIS_HOST",
+                "Value": {
+                  "Fn::GetAtt": [
+                    "RedisFF642DF2",
+                    "PrimaryEndPoint.Address"
+                  ]
+                }
+              },
+              {
+                "Name": "REDIS_PORT",
+                "Value": "6379"
+              },
+              {
+                "Name": "REDIS_USE_SSL",
+                "Value": "true"
+              },
+              {
+                "Name": "REDIS_DB",
+                "Value": "0"
+              },
+              {
+                "Name": "WEB_API_CORS_ALLOW_ORIGINS",
+                "Value": "*"
+              },
+              {
+                "Name": "CONSOLE_CORS_ALLOW_ORIGINS",
+                "Value": "*"
+              },
+              {
+                "Name": "STORAGE_TYPE",
+                "Value": "s3"
+              },
+              {
+                "Name": "S3_BUCKET_NAME",
+                "Value": {
+                  "Ref": "StorageBucket19DB2FF8"
+                }
+              },
+              {
+                "Name": "S3_REGION",
+                "Value": "ap-northeast-1"
+              },
+              {
+                "Name": "S3_USE_AWS_MANAGED_IAM",
+                "Value": "true"
+              },
+              {
+                "Name": "DB_DATABASE",
+                "Value": "main"
+              },
+              {
+                "Name": "VECTOR_STORE",
+                "Value": "pgvector"
+              },
+              {
+                "Name": "PGVECTOR_DATABASE",
+                "Value": "pgvector"
+              },
+              {
+                "Name": "CODE_EXECUTION_ENDPOINT",
+                "Value": "http://localhost:8194"
+              },
+              {
+                "Name": "PLUGIN_DAEMON_URL",
+                "Value": "http://localhost:5002"
+              },
+              {
+                "Name": "MARKETPLACE_API_URL",
+                "Value": "https://marketplace.dify.ai"
+              },
+              {
+                "Name": "MARKETPLACE_URL",
+                "Value": "https://marketplace.dify.ai"
+              }
+            ],
+            "Essential": true,
+            "HealthCheck": {
+              "Command": [
+                "CMD-SHELL",
+                "curl -f http://localhost:5001/health || exit 1"
+              ],
+              "Interval": 15,
+              "Retries": 10,
+              "StartPeriod": 90,
+              "Timeout": 5
+            },
+            "Image": "langgenius/dify-api:1.1.3",
+            "LogConfiguration": {
+              "LogDriver": "awslogs",
+              "Options": {
+                "awslogs-group": {
+                  "Ref": "ApiServiceTaskMainLogGroup4A8BF33F"
+                },
+                "awslogs-stream-prefix": "log",
+                "awslogs-region": "ap-northeast-1"
+              }
+            },
+            "Name": "Main",
+            "PortMappings": [
+              {
+                "ContainerPort": 5001,
+                "Protocol": "tcp"
+              }
+            ],
+            "Secrets": [
+              {
+                "Name": "DB_USERNAME",
+                "ValueFrom": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Ref": "PostgresClusterSecretAttachment8DDCF2A8"
+                      },
+                      ":username::"
+                    ]
+                  ]
+                }
+              },
+              {
+                "Name": "DB_HOST",
+                "ValueFrom": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Ref": "PostgresClusterSecretAttachment8DDCF2A8"
+                      },
+                      ":host::"
+                    ]
+                  ]
+                }
+              },
+              {
+                "Name": "DB_PORT",
+                "ValueFrom": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Ref": "PostgresClusterSecretAttachment8DDCF2A8"
+                      },
+                      ":port::"
+                    ]
+                  ]
+                }
+              },
+              {
+                "Name": "DB_PASSWORD",
+                "ValueFrom": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Ref": "PostgresClusterSecretAttachment8DDCF2A8"
+                      },
+                      ":password::"
+                    ]
+                  ]
+                }
+              },
+              {
+                "Name": "PGVECTOR_USER",
+                "ValueFrom": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Ref": "PostgresClusterSecretAttachment8DDCF2A8"
+                      },
+                      ":username::"
+                    ]
+                  ]
+                }
+              },
+              {
+                "Name": "PGVECTOR_HOST",
+                "ValueFrom": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Ref": "PostgresClusterSecretAttachment8DDCF2A8"
+                      },
+                      ":host::"
+                    ]
+                  ]
+                }
+              },
+              {
+                "Name": "PGVECTOR_PORT",
+                "ValueFrom": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Ref": "PostgresClusterSecretAttachment8DDCF2A8"
+                      },
+                      ":port::"
+                    ]
+                  ]
+                }
+              },
+              {
+                "Name": "PGVECTOR_PASSWORD",
+                "ValueFrom": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Ref": "PostgresClusterSecretAttachment8DDCF2A8"
+                      },
+                      ":password::"
+                    ]
+                  ]
+                }
+              },
+              {
+                "Name": "REDIS_PASSWORD",
+                "ValueFrom": {
+                  "Ref": "RedisAuthToken9E34F6A5"
+                }
+              },
+              {
+                "Name": "CELERY_BROKER_URL",
+                "ValueFrom": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:aws:ssm:ap-northeast-1:515855287013:parameter/",
+                      {
+                        "Ref": "RedisBrokerUrlA8582E06"
+                      }
+                    ]
+                  ]
+                }
+              },
+              {
+                "Name": "SECRET_KEY",
+                "ValueFrom": {
+                  "Ref": "ApiServiceEncryptionSecretF73F9ECD"
+                }
+              },
+              {
+                "Name": "CODE_EXECUTION_API_KEY",
+                "ValueFrom": {
+                  "Ref": "ApiServiceEncryptionSecretF73F9ECD"
+                }
+              },
+              {
+                "Name": "INNER_API_KEY_FOR_PLUGIN",
+                "ValueFrom": {
+                  "Ref": "ApiServiceEncryptionSecretF73F9ECD"
+                }
+              },
+              {
+                "Name": "PLUGIN_DAEMON_KEY",
+                "ValueFrom": {
+                  "Ref": "ApiServiceEncryptionSecretF73F9ECD"
+                }
+              }
+            ]
+          },
+          {
+            "Environment": [
+              {
+                "Name": "MODE",
+                "Value": "worker"
+              },
+              {
+                "Name": "LOG_LEVEL",
+                "Value": "ERROR"
+              },
+              {
+                "Name": "DEBUG",
+                "Value": "false"
+              },
+              {
+                "Name": "CONSOLE_WEB_URL",
+                "Value": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "https://",
+                      {
+                        "Fn::GetAtt": [
+                          "AlbDistribution42730BA5",
+                          "DomainName"
+                        ]
+                      }
+                    ]
+                  ]
+                }
+              },
+              {
+                "Name": "CONSOLE_API_URL",
+                "Value": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "https://",
+                      {
+                        "Fn::GetAtt": [
+                          "AlbDistribution42730BA5",
+                          "DomainName"
+                        ]
+                      }
+                    ]
+                  ]
+                }
+              },
+              {
+                "Name": "SERVICE_API_URL",
+                "Value": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "https://",
+                      {
+                        "Fn::GetAtt": [
+                          "AlbDistribution42730BA5",
+                          "DomainName"
+                        ]
+                      }
+                    ]
+                  ]
+                }
+              },
+              {
+                "Name": "APP_WEB_URL",
+                "Value": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "https://",
+                      {
+                        "Fn::GetAtt": [
+                          "AlbDistribution42730BA5",
+                          "DomainName"
+                        ]
+                      }
+                    ]
+                  ]
+                }
+              },
+              {
+                "Name": "MIGRATION_ENABLED",
+                "Value": "true"
+              },
+              {
+                "Name": "SQLALCHEMY_POOL_PRE_PING",
+                "Value": "True"
+              },
+              {
+                "Name": "REDIS_HOST",
+                "Value": {
+                  "Fn::GetAtt": [
+                    "RedisFF642DF2",
+                    "PrimaryEndPoint.Address"
+                  ]
+                }
+              },
+              {
+                "Name": "REDIS_PORT",
+                "Value": "6379"
+              },
+              {
+                "Name": "REDIS_USE_SSL",
+                "Value": "true"
+              },
+              {
+                "Name": "REDIS_DB",
+                "Value": "0"
+              },
+              {
+                "Name": "STORAGE_TYPE",
+                "Value": "s3"
+              },
+              {
+                "Name": "S3_BUCKET_NAME",
+                "Value": {
+                  "Ref": "StorageBucket19DB2FF8"
+                }
+              },
+              {
+                "Name": "S3_REGION",
+                "Value": "ap-northeast-1"
+              },
+              {
+                "Name": "DB_DATABASE",
+                "Value": "main"
+              },
+              {
+                "Name": "VECTOR_STORE",
+                "Value": "pgvector"
+              },
+              {
+                "Name": "PGVECTOR_DATABASE",
+                "Value": "pgvector"
+              },
+              {
+                "Name": "PLUGIN_API_URL",
+                "Value": "http://localhost:5002"
+              },
+              {
+                "Name": "MARKETPLACE_API_URL",
+                "Value": "https://marketplace.dify.ai"
+              },
+              {
+                "Name": "MARKETPLACE_URL",
+                "Value": "https://marketplace.dify.ai"
+              }
+            ],
+            "Essential": true,
+            "Image": "langgenius/dify-api:1.1.3",
+            "LogConfiguration": {
+              "LogDriver": "awslogs",
+              "Options": {
+                "awslogs-group": {
+                  "Ref": "ApiServiceTaskWorkerLogGroup48EED12F"
+                },
+                "awslogs-stream-prefix": "log",
+                "awslogs-region": "ap-northeast-1"
+              }
+            },
+            "Name": "Worker",
+            "Secrets": [
+              {
+                "Name": "DB_USERNAME",
+                "ValueFrom": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Ref": "PostgresClusterSecretAttachment8DDCF2A8"
+                      },
+                      ":username::"
+                    ]
+                  ]
+                }
+              },
+              {
+                "Name": "DB_HOST",
+                "ValueFrom": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Ref": "PostgresClusterSecretAttachment8DDCF2A8"
+                      },
+                      ":host::"
+                    ]
+                  ]
+                }
+              },
+              {
+                "Name": "DB_PORT",
+                "ValueFrom": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Ref": "PostgresClusterSecretAttachment8DDCF2A8"
+                      },
+                      ":port::"
+                    ]
+                  ]
+                }
+              },
+              {
+                "Name": "DB_PASSWORD",
+                "ValueFrom": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Ref": "PostgresClusterSecretAttachment8DDCF2A8"
+                      },
+                      ":password::"
+                    ]
+                  ]
+                }
+              },
+              {
+                "Name": "PGVECTOR_USER",
+                "ValueFrom": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Ref": "PostgresClusterSecretAttachment8DDCF2A8"
+                      },
+                      ":username::"
+                    ]
+                  ]
+                }
+              },
+              {
+                "Name": "PGVECTOR_HOST",
+                "ValueFrom": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Ref": "PostgresClusterSecretAttachment8DDCF2A8"
+                      },
+                      ":host::"
+                    ]
+                  ]
+                }
+              },
+              {
+                "Name": "PGVECTOR_PORT",
+                "ValueFrom": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Ref": "PostgresClusterSecretAttachment8DDCF2A8"
+                      },
+                      ":port::"
+                    ]
+                  ]
+                }
+              },
+              {
+                "Name": "PGVECTOR_PASSWORD",
+                "ValueFrom": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Ref": "PostgresClusterSecretAttachment8DDCF2A8"
+                      },
+                      ":password::"
+                    ]
+                  ]
+                }
+              },
+              {
+                "Name": "REDIS_PASSWORD",
+                "ValueFrom": {
+                  "Ref": "RedisAuthToken9E34F6A5"
+                }
+              },
+              {
+                "Name": "CELERY_BROKER_URL",
+                "ValueFrom": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:aws:ssm:ap-northeast-1:515855287013:parameter/",
+                      {
+                        "Ref": "RedisBrokerUrlA8582E06"
+                      }
+                    ]
+                  ]
+                }
+              },
+              {
+                "Name": "SECRET_KEY",
+                "ValueFrom": {
+                  "Ref": "ApiServiceEncryptionSecretF73F9ECD"
+                }
+              },
+              {
+                "Name": "PLUGIN_DAEMON_KEY",
+                "ValueFrom": {
+                  "Ref": "ApiServiceEncryptionSecretF73F9ECD"
+                }
+              }
+            ]
+          },
+          {
+            "Essential": false,
+            "Image": {
+              "Fn::Sub": "515855287013.dkr.ecr.ap-northeast-1.${AWS::URLSuffix}/cdk-hnb659fds-container-assets-515855287013-ap-northeast-1:8212bb6032c6f45fe8aa3802d732a1c334e09486001a46c78816d50319722a0b"
+            },
+            "MountPoints": [
+              {
+                "ContainerPath": "/dependencies",
+                "ReadOnly": false,
+                "SourceVolume": "sandbox"
+              }
+            ],
+            "Name": "SandboxFileMount"
+          },
+          {
+            "DependsOn": [
+              {
+                "Condition": "COMPLETE",
+                "ContainerName": "SandboxFileMount"
+              }
+            ],
+            "Environment": [
+              {
+                "Name": "GIN_MODE",
+                "Value": "release"
+              },
+              {
+                "Name": "WORKER_TIMEOUT",
+                "Value": "15"
+              },
+              {
+                "Name": "ENABLE_NETWORK",
+                "Value": "true"
+              }
+            ],
+            "Essential": true,
+            "Image": "langgenius/dify-sandbox:latest",
+            "LogConfiguration": {
+              "LogDriver": "awslogs",
+              "Options": {
+                "awslogs-group": {
+                  "Ref": "ApiServiceTaskSandboxLogGroupDDF292A0"
+                },
+                "awslogs-stream-prefix": "log",
+                "awslogs-region": "ap-northeast-1"
+              }
+            },
+            "MountPoints": [
+              {
+                "ContainerPath": "/dependencies",
+                "ReadOnly": true,
+                "SourceVolume": "sandbox"
+              }
+            ],
+            "Name": "Sandbox",
+            "PortMappings": [
+              {
+                "ContainerPort": 8194,
+                "Protocol": "tcp"
+              }
+            ],
+            "Secrets": [
+              {
+                "Name": "API_KEY",
+                "ValueFrom": {
+                  "Ref": "ApiServiceEncryptionSecretF73F9ECD"
+                }
+              }
+            ]
+          },
+          {
+            "Environment": [
+              {
+                "Name": "GIN_MODE",
+                "Value": "release"
+              },
+              {
+                "Name": "REDIS_HOST",
+                "Value": {
+                  "Fn::GetAtt": [
+                    "RedisFF642DF2",
+                    "PrimaryEndPoint.Address"
+                  ]
+                }
+              },
+              {
+                "Name": "REDIS_PORT",
+                "Value": "6379"
+              },
+              {
+                "Name": "REDIS_USE_SSL",
+                "Value": "true"
+              },
+              {
+                "Name": "DB_DATABASE",
+                "Value": "dify_plugin"
+              },
+              {
+                "Name": "DB_SSL_MODE",
+                "Value": "disable"
+              },
+              {
+                "Name": "SERVER_PORT",
+                "Value": "5002"
+              },
+              {
+                "Name": "AWS_REGION",
+                "Value": "ap-northeast-1"
+              },
+              {
+                "Name": "PLUGIN_STORAGE_TYPE",
+                "Value": "aws_s3"
+              },
+              {
+                "Name": "PLUGIN_STORAGE_OSS_BUCKET",
+                "Value": {
+                  "Ref": "StorageBucket19DB2FF8"
+                }
+              },
+              {
+                "Name": "PLUGIN_INSTALLED_PATH",
+                "Value": "plugins"
+              },
+              {
+                "Name": "PLUGIN_MAX_EXECUTION_TIMEOUT",
+                "Value": "600"
+              },
+              {
+                "Name": "MAX_PLUGIN_PACKAGE_SIZE",
+                "Value": "52428800"
+              },
+              {
+                "Name": "MAX_BUNDLE_PACKAGE_SIZE",
+                "Value": "52428800"
+              },
+              {
+                "Name": "PLUGIN_REMOTE_INSTALLING_ENABLED",
+                "Value": "true"
+              },
+              {
+                "Name": "PLUGIN_REMOTE_INSTALLING_HOST",
+                "Value": "localhost"
+              },
+              {
+                "Name": "PLUGIN_REMOTE_INSTALLING_PORT",
+                "Value": "5003"
+              },
+              {
+                "Name": "ROUTINE_POOL_SIZE",
+                "Value": "10000"
+              },
+              {
+                "Name": "LIFETIME_COLLECTION_HEARTBEAT_INTERVAL",
+                "Value": "5"
+              },
+              {
+                "Name": "LIFETIME_COLLECTION_GC_INTERVAL",
+                "Value": "60"
+              },
+              {
+                "Name": "LIFETIME_STATE_GC_INTERVAL",
+                "Value": "300"
+              },
+              {
+                "Name": "DIFY_INVOCATION_CONNECTION_IDLE_TIMEOUT",
+                "Value": "120"
+              },
+              {
+                "Name": "PYTHON_ENV_INIT_TIMEOUT",
+                "Value": "120"
+              },
+              {
+                "Name": "DIFY_INNER_API_URL",
+                "Value": "http://localhost:5001"
+              },
+              {
+                "Name": "PLUGIN_WORKING_PATH",
+                "Value": "/app/storage/cwd"
+              },
+              {
+                "Name": "FORCE_VERIFYING_SIGNATURE",
+                "Value": "true"
+              },
+              {
+                "Name": "S3_USE_AWS_MANAGED_IAM",
+                "Value": "true"
+              },
+              {
+                "Name": "S3_ENDPOINT",
+                "Value": "https://s3.ap-northeast-1.amazonaws.com"
+              }
+            ],
+            "Essential": true,
+            "Image": "langgenius/dify-plugin-daemon:0.0.6-local",
+            "LogConfiguration": {
+              "LogDriver": "awslogs",
+              "Options": {
+                "awslogs-group": {
+                  "Ref": "ApiServiceTaskPluginDaemonLogGroupB382B492"
+                },
+                "awslogs-stream-prefix": "log",
+                "awslogs-region": "ap-northeast-1"
+              }
+            },
+            "Name": "PluginDaemon",
+            "PortMappings": [
+              {
+                "ContainerPort": 5002,
+                "Protocol": "tcp"
+              },
+              {
+                "ContainerPort": 5003,
+                "Protocol": "tcp"
+              }
+            ],
+            "Secrets": [
+              {
+                "Name": "DB_USERNAME",
+                "ValueFrom": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Ref": "PostgresClusterSecretAttachment8DDCF2A8"
+                      },
+                      ":username::"
+                    ]
+                  ]
+                }
+              },
+              {
+                "Name": "DB_HOST",
+                "ValueFrom": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Ref": "PostgresClusterSecretAttachment8DDCF2A8"
+                      },
+                      ":host::"
+                    ]
+                  ]
+                }
+              },
+              {
+                "Name": "DB_PORT",
+                "ValueFrom": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Ref": "PostgresClusterSecretAttachment8DDCF2A8"
+                      },
+                      ":port::"
+                    ]
+                  ]
+                }
+              },
+              {
+                "Name": "DB_PASSWORD",
+                "ValueFrom": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Ref": "PostgresClusterSecretAttachment8DDCF2A8"
+                      },
+                      ":password::"
+                    ]
+                  ]
+                }
+              },
+              {
+                "Name": "PGVECTOR_USER",
+                "ValueFrom": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Ref": "PostgresClusterSecretAttachment8DDCF2A8"
+                      },
+                      ":username::"
+                    ]
+                  ]
+                }
+              },
+              {
+                "Name": "PGVECTOR_HOST",
+                "ValueFrom": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Ref": "PostgresClusterSecretAttachment8DDCF2A8"
+                      },
+                      ":host::"
+                    ]
+                  ]
+                }
+              },
+              {
+                "Name": "PGVECTOR_PORT",
+                "ValueFrom": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Ref": "PostgresClusterSecretAttachment8DDCF2A8"
+                      },
+                      ":port::"
+                    ]
+                  ]
+                }
+              },
+              {
+                "Name": "PGVECTOR_PASSWORD",
+                "ValueFrom": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Ref": "PostgresClusterSecretAttachment8DDCF2A8"
+                      },
+                      ":password::"
+                    ]
+                  ]
+                }
+              },
+              {
+                "Name": "REDIS_PASSWORD",
+                "ValueFrom": {
+                  "Ref": "RedisAuthToken9E34F6A5"
+                }
+              },
+              {
+                "Name": "CELERY_BROKER_URL",
+                "ValueFrom": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:aws:ssm:ap-northeast-1:515855287013:parameter/",
+                      {
+                        "Ref": "RedisBrokerUrlA8582E06"
+                      }
+                    ]
+                  ]
+                }
+              },
+              {
+                "Name": "DIFY_INNER_API_KEY",
+                "ValueFrom": {
+                  "Ref": "ApiServiceEncryptionSecretF73F9ECD"
+                }
+              },
+              {
+                "Name": "SERVER_KEY",
+                "ValueFrom": {
+                  "Ref": "ApiServiceEncryptionSecretF73F9ECD"
+                }
+              }
+            ]
+          },
+          {
+            "Environment": [
+              {
+                "Name": "BEARER_TOKEN",
+                "Value": "dummy-key"
+              },
+              {
+                "Name": "BEDROCK_REGION",
+                "Value": "ap-northeast-1"
+              }
+            ],
+            "Essential": true,
+            "Image": {
+              "Fn::Sub": "515855287013.dkr.ecr.ap-northeast-1.${AWS::URLSuffix}/cdk-hnb659fds-container-assets-515855287013-ap-northeast-1:6eb81c693c9d08a4ce64f3a3fca8b045e126a1c3e2d4c89dae30aff538ed325d"
+            },
+            "LogConfiguration": {
+              "LogDriver": "awslogs",
+              "Options": {
+                "awslogs-group": {
+                  "Ref": "ApiServiceTaskExternalKnowledgeBaseAPILogGroupE8D1DD85"
+                },
+                "awslogs-stream-prefix": "log",
+                "awslogs-region": "ap-northeast-1"
+              }
+            },
+            "Name": "ExternalKnowledgeBaseAPI",
+            "PortMappings": [
+              {
+                "ContainerPort": 8000,
+                "Protocol": "tcp"
+              }
+            ]
+          }
+        ],
+        "Cpu": "1024",
+        "ExecutionRoleArn": {
+          "Fn::GetAtt": [
+            "ApiServiceTaskExecutionRoleFE812553",
+            "Arn"
+          ]
+        },
+        "Family": "DifyOnAwsStackApiServiceTask9519C567",
+        "Memory": "2048",
+        "NetworkMode": "awsvpc",
+        "RequiresCompatibilities": [
+          "FARGATE"
+        ],
+        "RuntimePlatform": {
+          "CpuArchitecture": "X86_64"
+        },
+        "TaskRoleArn": {
+          "Fn::GetAtt": [
+            "ApiServiceTaskTaskRole06F87EBE",
+            "Arn"
+          ]
+        },
+        "Volumes": [
+          {
+            "Name": "sandbox"
+          }
+        ]
+      },
+      "Metadata": {
+        "aws:cdk:path": "DifyOnAwsStack/ApiService/Task/Resource"
+      }
+    },
+    "ApiServiceTaskMainLogGroup4A8BF33F": {
+      "Type": "AWS::Logs::LogGroup",
+      "UpdateReplacePolicy": "Retain",
+      "DeletionPolicy": "Retain",
+      "Metadata": {
+        "aws:cdk:path": "DifyOnAwsStack/ApiService/Task/Main/LogGroup/Resource"
+      }
+    },
+    "ApiServiceTaskExecutionRoleFE812553": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "ecs-tasks.amazonaws.com"
+              }
+            }
+          ],
+          "Version": "2012-10-17"
+        }
+      },
+      "Metadata": {
+        "aws:cdk:path": "DifyOnAwsStack/ApiService/Task/ExecutionRole/Resource"
+      }
+    },
+    "ApiServiceTaskExecutionRoleDefaultPolicy38AB6296": {
+      "Type": "AWS::IAM::Policy",
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "logs:CreateLogStream",
+                "logs:PutLogEvents"
+              ],
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "ApiServiceTaskExternalKnowledgeBaseAPILogGroupE8D1DD85",
+                    "Arn"
+                  ]
+                },
+                {
+                  "Fn::GetAtt": [
+                    "ApiServiceTaskMainLogGroup4A8BF33F",
+                    "Arn"
+                  ]
+                },
+                {
+                  "Fn::GetAtt": [
+                    "ApiServiceTaskPluginDaemonLogGroupB382B492",
+                    "Arn"
+                  ]
+                },
+                {
+                  "Fn::GetAtt": [
+                    "ApiServiceTaskSandboxLogGroupDDF292A0",
+                    "Arn"
+                  ]
+                },
+                {
+                  "Fn::GetAtt": [
+                    "ApiServiceTaskWorkerLogGroup48EED12F",
+                    "Arn"
+                  ]
+                }
+              ]
+            },
+            {
+              "Action": [
+                "secretsmanager:DescribeSecret",
+                "secretsmanager:GetSecretValue"
+              ],
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Ref": "ApiServiceEncryptionSecretF73F9ECD"
+                },
+                {
+                  "Ref": "PostgresClusterSecretAttachment8DDCF2A8"
+                },
+                {
+                  "Ref": "RedisAuthToken9E34F6A5"
+                }
+              ]
+            },
+            {
+              "Action": [
+                "ssm:DescribeParameters",
+                "ssm:GetParameter",
+                "ssm:GetParameterHistory",
+                "ssm:GetParameters"
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::Join": [
+                  "",
+                  [
+                    "arn:aws:ssm:ap-northeast-1:515855287013:parameter/",
+                    {
+                      "Ref": "RedisBrokerUrlA8582E06"
+                    }
+                  ]
+                ]
+              }
+            },
+            {
+              "Action": [
+                "ecr:BatchCheckLayerAvailability",
+                "ecr:BatchGetImage",
+                "ecr:GetDownloadUrlForLayer"
+              ],
+              "Effect": "Allow",
+              "Resource": "arn:aws:ecr:ap-northeast-1:515855287013:repository/cdk-hnb659fds-container-assets-515855287013-ap-northeast-1"
+            },
+            {
+              "Action": "ecr:GetAuthorizationToken",
+              "Effect": "Allow",
+              "Resource": "*"
+            }
+          ],
+          "Version": "2012-10-17"
+        },
+        "PolicyName": "ApiServiceTaskExecutionRoleDefaultPolicy38AB6296",
+        "Roles": [
+          {
+            "Ref": "ApiServiceTaskExecutionRoleFE812553"
+          }
+        ]
+      },
+      "Metadata": {
+        "aws:cdk:path": "DifyOnAwsStack/ApiService/Task/ExecutionRole/DefaultPolicy/Resource"
+      }
+    },
+    "ApiServiceTaskWorkerLogGroup48EED12F": {
+      "Type": "AWS::Logs::LogGroup",
+      "UpdateReplacePolicy": "Retain",
+      "DeletionPolicy": "Retain",
+      "Metadata": {
+        "aws:cdk:path": "DifyOnAwsStack/ApiService/Task/Worker/LogGroup/Resource"
+      }
+    },
+    "ApiServiceTaskSandboxLogGroupDDF292A0": {
+      "Type": "AWS::Logs::LogGroup",
+      "UpdateReplacePolicy": "Retain",
+      "DeletionPolicy": "Retain",
+      "Metadata": {
+        "aws:cdk:path": "DifyOnAwsStack/ApiService/Task/Sandbox/LogGroup/Resource"
+      }
+    },
+    "ApiServiceTaskPluginDaemonLogGroupB382B492": {
+      "Type": "AWS::Logs::LogGroup",
+      "UpdateReplacePolicy": "Retain",
+      "DeletionPolicy": "Retain",
+      "Metadata": {
+        "aws:cdk:path": "DifyOnAwsStack/ApiService/Task/PluginDaemon/LogGroup/Resource"
+      }
+    },
+    "ApiServiceTaskExternalKnowledgeBaseAPILogGroupE8D1DD85": {
+      "Type": "AWS::Logs::LogGroup",
+      "UpdateReplacePolicy": "Retain",
+      "DeletionPolicy": "Retain",
+      "Metadata": {
+        "aws:cdk:path": "DifyOnAwsStack/ApiService/Task/ExternalKnowledgeBaseAPI/LogGroup/Resource"
+      }
+    },
+    "ApiServiceEncryptionSecretF73F9ECD": {
+      "Type": "AWS::SecretsManager::Secret",
+      "Properties": {
+        "GenerateSecretString": {
+          "PasswordLength": 42
+        }
+      },
+      "UpdateReplacePolicy": "Delete",
+      "DeletionPolicy": "Delete",
+      "Metadata": {
+        "aws:cdk:path": "DifyOnAwsStack/ApiService/EncryptionSecret/Resource"
+      }
+    },
+    "ApiServiceFargateServiceE4EA9E4E": {
+      "Type": "AWS::ECS::Service",
+      "Properties": {
+        "CapacityProviderStrategy": [
+          {
+            "CapacityProvider": "FARGATE",
+            "Weight": 0
+          },
+          {
+            "CapacityProvider": "FARGATE_SPOT",
+            "Weight": 1
+          }
+        ],
+        "Cluster": {
+          "Ref": "ClusterEB0386A7"
+        },
+        "DeploymentConfiguration": {
+          "MaximumPercent": 200,
+          "MinimumHealthyPercent": 100
+        },
+        "EnableECSManagedTags": false,
+        "EnableExecuteCommand": true,
+        "HealthCheckGracePeriodSeconds": 60,
+        "LoadBalancers": [
+          {
+            "ContainerName": "Main",
+            "ContainerPort": 5001,
+            "TargetGroupArn": {
+              "Ref": "AlbApiTargetGroupInternal2EB9930E"
+            }
+          }
+        ],
+        "NetworkConfiguration": {
+          "AwsvpcConfiguration": {
+            "AssignPublicIp": "DISABLED",
+            "SecurityGroups": [
+              {
+                "Fn::GetAtt": [
+                  "ApiServiceFargateServiceSecurityGroupE31C96C6",
+                  "GroupId"
+                ]
+              }
+            ],
+            "Subnets": [
+              {
+                "Ref": "VpcPrivateSubnet1Subnet536B997A"
+              },
+              {
+                "Ref": "VpcPrivateSubnet2Subnet3788AAA1"
+              }
+            ]
+          }
+        },
+        "TaskDefinition": {
+          "Ref": "ApiServiceTask878B1807"
+        }
+      },
+      "DependsOn": [
+        "AlbListenerApi0Rule033B7A48",
+        "AlbListenerApi1RuleDF535F10",
+        "ApiServiceTaskTaskRoleDefaultPolicy982AD2DC",
+        "ApiServiceTaskTaskRole06F87EBE"
+      ],
+      "Metadata": {
+        "aws:cdk:path": "DifyOnAwsStack/ApiService/FargateService/Service"
+      }
+    },
+    "ApiServiceFargateServiceSecurityGroupE31C96C6": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "DifyOnAwsStack/ApiService/FargateService/SecurityGroup",
+        "SecurityGroupEgress": [
+          {
+            "CidrIp": "0.0.0.0/0",
+            "Description": "Allow all outbound traffic by default",
+            "IpProtocol": "-1"
+          }
+        ],
+        "VpcId": {
+          "Ref": "Vpc8378EB38"
+        }
+      },
+      "DependsOn": [
+        "ApiServiceTaskTaskRoleDefaultPolicy982AD2DC",
+        "ApiServiceTaskTaskRole06F87EBE"
+      ],
+      "Metadata": {
+        "aws:cdk:path": "DifyOnAwsStack/ApiService/FargateService/SecurityGroup/Resource"
+      }
+    },
+    "ApiServiceFargateServiceSecurityGroupfromDifyOnAwsStackAlbSecurityGroup6F7B80FF50015010BB25": {
+      "Type": "AWS::EC2::SecurityGroupIngress",
+      "Properties": {
+        "Description": "Load balancer to target",
+        "FromPort": 5001,
+        "GroupId": {
+          "Fn::GetAtt": [
+            "ApiServiceFargateServiceSecurityGroupE31C96C6",
+            "GroupId"
+          ]
+        },
+        "IpProtocol": "tcp",
+        "SourceSecurityGroupId": {
+          "Fn::GetAtt": [
+            "AlbSecurityGroup433229ED",
+            "GroupId"
+          ]
+        },
+        "ToPort": 5001
+      },
+      "DependsOn": [
+        "ApiServiceTaskTaskRoleDefaultPolicy982AD2DC",
+        "ApiServiceTaskTaskRole06F87EBE"
+      ],
+      "Metadata": {
+        "aws:cdk:path": "DifyOnAwsStack/ApiService/FargateService/SecurityGroup/from DifyOnAwsStackAlbSecurityGroup6F7B80FF:5001"
+      }
+    },
+    "ApiServiceCreatePluginsPlaceholderE9D923F8": {
+      "Type": "Custom::AWS",
+      "Properties": {
+        "ServiceToken": {
+          "Fn::GetAtt": [
+            "AWS679f53fac002430cb0da5b7982bd22872D164C4C",
+            "Arn"
+          ]
+        },
+        "Create": {
+          "Fn::Join": [
+            "",
+            [
+              "{\"service\":\"s3\",\"action\":\"putObject\",\"parameters\":{\"Bucket\":\"",
+              {
+                "Ref": "StorageBucket19DB2FF8"
+              },
+              "\",\"Key\":\"plugins\",\"Body\":\"placeholder. see https://github.com/langgenius/dify-plugin-daemon/issues/35\"},\"physicalResourceId\":{\"id\":\"id\"}}"
+            ]
+          ]
+        },
+        "Update": {
+          "Fn::Join": [
+            "",
+            [
+              "{\"service\":\"s3\",\"action\":\"putObject\",\"parameters\":{\"Bucket\":\"",
+              {
+                "Ref": "StorageBucket19DB2FF8"
+              },
+              "\",\"Key\":\"plugins\",\"Body\":\"placeholder. see https://github.com/langgenius/dify-plugin-daemon/issues/35\"},\"physicalResourceId\":{\"id\":\"id\"}}"
+            ]
+          ]
+        },
+        "InstallLatestAwsSdk": false
+      },
+      "DependsOn": [
+        "ApiServiceCreatePluginsPlaceholderCustomResourcePolicy2609A14C"
+      ],
+      "UpdateReplacePolicy": "Delete",
+      "DeletionPolicy": "Delete",
+      "Metadata": {
+        "aws:cdk:path": "DifyOnAwsStack/ApiService/CreatePluginsPlaceholder/Resource/Default"
+      }
+    },
+    "ApiServiceCreatePluginsPlaceholderCustomResourcePolicy2609A14C": {
+      "Type": "AWS::IAM::Policy",
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": "s3:PutObject",
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "StorageBucket19DB2FF8",
+                    "Arn"
+                  ]
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::GetAtt": [
+                          "StorageBucket19DB2FF8",
+                          "Arn"
+                        ]
+                      },
+                      "/*"
+                    ]
+                  ]
+                }
+              ]
+            }
+          ],
+          "Version": "2012-10-17"
+        },
+        "PolicyName": "ApiServiceCreatePluginsPlaceholderCustomResourcePolicy2609A14C",
+        "Roles": [
+          {
+            "Ref": "AWS679f53fac002430cb0da5b7982bd2287ServiceRoleC1EA0FF2"
+          }
+        ]
+      },
+      "Metadata": {
+        "aws:cdk:path": "DifyOnAwsStack/ApiService/CreatePluginsPlaceholder/CustomResourcePolicy/Resource"
+      }
+    },
+    "WebServiceTaskTaskRole22AA8FAB": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "ecs-tasks.amazonaws.com"
+              }
+            }
+          ],
+          "Version": "2012-10-17"
+        }
+      },
+      "Metadata": {
+        "aws:cdk:path": "DifyOnAwsStack/WebService/Task/TaskRole/Resource"
+      }
+    },
+    "WebServiceTaskTaskRoleDefaultPolicyC2E32007": {
+      "Type": "AWS::IAM::Policy",
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "logs:CreateLogStream",
+                "logs:DescribeLogGroups",
+                "logs:DescribeLogStreams",
+                "logs:PutLogEvents",
+                "ssmmessages:CreateControlChannel",
+                "ssmmessages:CreateDataChannel",
+                "ssmmessages:OpenControlChannel",
+                "ssmmessages:OpenDataChannel"
+              ],
+              "Effect": "Allow",
+              "Resource": "*"
+            }
+          ],
+          "Version": "2012-10-17"
+        },
+        "PolicyName": "WebServiceTaskTaskRoleDefaultPolicyC2E32007",
+        "Roles": [
+          {
+            "Ref": "WebServiceTaskTaskRole22AA8FAB"
+          }
+        ]
+      },
+      "Metadata": {
+        "aws:cdk:path": "DifyOnAwsStack/WebService/Task/TaskRole/DefaultPolicy/Resource"
+      }
+    },
+    "WebServiceTaskF9926E9D": {
+      "Type": "AWS::ECS::TaskDefinition",
+      "Properties": {
+        "ContainerDefinitions": [
+          {
+            "Environment": [
+              {
+                "Name": "LOG_LEVEL",
+                "Value": "ERROR"
+              },
+              {
+                "Name": "DEBUG",
+                "Value": "false"
+              },
+              {
+                "Name": "CONSOLE_API_URL",
+                "Value": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "https://",
+                      {
+                        "Fn::GetAtt": [
+                          "AlbDistribution42730BA5",
+                          "DomainName"
+                        ]
+                      }
+                    ]
+                  ]
+                }
+              },
+              {
+                "Name": "APP_API_URL",
+                "Value": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "https://",
+                      {
+                        "Fn::GetAtt": [
+                          "AlbDistribution42730BA5",
+                          "DomainName"
+                        ]
+                      }
+                    ]
+                  ]
+                }
+              },
+              {
+                "Name": "HOSTNAME",
+                "Value": "0.0.0.0"
+              },
+              {
+                "Name": "PORT",
+                "Value": "3000"
+              },
+              {
+                "Name": "MARKETPLACE_API_URL",
+                "Value": "https://marketplace.dify.ai"
+              },
+              {
+                "Name": "MARKETPLACE_URL",
+                "Value": "https://marketplace.dify.ai"
+              }
+            ],
+            "Essential": true,
+            "HealthCheck": {
+              "Command": [
+                "CMD-SHELL",
+                "wget --no-verbose --tries=1 --spider http://localhost:3000/ || exit 1"
+              ],
+              "Interval": 15,
+              "Retries": 3,
+              "StartPeriod": 30,
+              "Timeout": 5
+            },
+            "Image": "langgenius/dify-web:1.1.3",
+            "LogConfiguration": {
+              "LogDriver": "awslogs",
+              "Options": {
+                "awslogs-group": {
+                  "Ref": "WebServiceTaskMainLogGroup38DB76FC"
+                },
+                "awslogs-stream-prefix": "log",
+                "awslogs-region": "ap-northeast-1"
+              }
+            },
+            "Name": "Main",
+            "PortMappings": [
+              {
+                "ContainerPort": 3000,
+                "Protocol": "tcp"
+              }
+            ]
+          }
+        ],
+        "Cpu": "256",
+        "ExecutionRoleArn": {
+          "Fn::GetAtt": [
+            "WebServiceTaskExecutionRole4406CA16",
+            "Arn"
+          ]
+        },
+        "Family": "DifyOnAwsStackWebServiceTask83D52519",
+        "Memory": "512",
+        "NetworkMode": "awsvpc",
+        "RequiresCompatibilities": [
+          "FARGATE"
+        ],
+        "RuntimePlatform": {
+          "CpuArchitecture": "X86_64"
+        },
+        "TaskRoleArn": {
+          "Fn::GetAtt": [
+            "WebServiceTaskTaskRole22AA8FAB",
+            "Arn"
+          ]
+        }
+      },
+      "Metadata": {
+        "aws:cdk:path": "DifyOnAwsStack/WebService/Task/Resource"
+      }
+    },
+    "WebServiceTaskMainLogGroup38DB76FC": {
+      "Type": "AWS::Logs::LogGroup",
+      "UpdateReplacePolicy": "Retain",
+      "DeletionPolicy": "Retain",
+      "Metadata": {
+        "aws:cdk:path": "DifyOnAwsStack/WebService/Task/Main/LogGroup/Resource"
+      }
+    },
+    "WebServiceTaskExecutionRole4406CA16": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "ecs-tasks.amazonaws.com"
+              }
+            }
+          ],
+          "Version": "2012-10-17"
+        }
+      },
+      "Metadata": {
+        "aws:cdk:path": "DifyOnAwsStack/WebService/Task/ExecutionRole/Resource"
+      }
+    },
+    "WebServiceTaskExecutionRoleDefaultPolicyA297AC39": {
+      "Type": "AWS::IAM::Policy",
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "logs:CreateLogStream",
+                "logs:PutLogEvents"
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::GetAtt": [
+                  "WebServiceTaskMainLogGroup38DB76FC",
+                  "Arn"
+                ]
+              }
+            }
+          ],
+          "Version": "2012-10-17"
+        },
+        "PolicyName": "WebServiceTaskExecutionRoleDefaultPolicyA297AC39",
+        "Roles": [
+          {
+            "Ref": "WebServiceTaskExecutionRole4406CA16"
+          }
+        ]
+      },
+      "Metadata": {
+        "aws:cdk:path": "DifyOnAwsStack/WebService/Task/ExecutionRole/DefaultPolicy/Resource"
+      }
+    },
+    "WebServiceFargateService5BB9529D": {
+      "Type": "AWS::ECS::Service",
+      "Properties": {
+        "CapacityProviderStrategy": [
+          {
+            "CapacityProvider": "FARGATE",
+            "Weight": 0
+          },
+          {
+            "CapacityProvider": "FARGATE_SPOT",
+            "Weight": 1
+          }
+        ],
+        "Cluster": {
+          "Ref": "ClusterEB0386A7"
+        },
+        "DeploymentConfiguration": {
+          "MaximumPercent": 200,
+          "MinimumHealthyPercent": 100
+        },
+        "EnableECSManagedTags": false,
+        "EnableExecuteCommand": true,
+        "HealthCheckGracePeriodSeconds": 60,
+        "LoadBalancers": [
+          {
+            "ContainerName": "Main",
+            "ContainerPort": 3000,
+            "TargetGroupArn": {
+              "Ref": "AlbWebTargetGroupInternal92BC2C4D"
+            }
+          }
+        ],
+        "NetworkConfiguration": {
+          "AwsvpcConfiguration": {
+            "AssignPublicIp": "DISABLED",
+            "SecurityGroups": [
+              {
+                "Fn::GetAtt": [
+                  "WebServiceFargateServiceSecurityGroup60FE78D6",
+                  "GroupId"
+                ]
+              }
+            ],
+            "Subnets": [
+              {
+                "Ref": "VpcPrivateSubnet1Subnet536B997A"
+              },
+              {
+                "Ref": "VpcPrivateSubnet2Subnet3788AAA1"
+              }
+            ]
+          }
+        },
+        "TaskDefinition": {
+          "Ref": "WebServiceTaskF9926E9D"
+        }
+      },
+      "DependsOn": [
+        "AlbListenerWeb0RuleE10BEE0F",
+        "WebServiceTaskTaskRoleDefaultPolicyC2E32007",
+        "WebServiceTaskTaskRole22AA8FAB"
+      ],
+      "Metadata": {
+        "aws:cdk:path": "DifyOnAwsStack/WebService/FargateService/Service"
+      }
+    },
+    "WebServiceFargateServiceSecurityGroup60FE78D6": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "DifyOnAwsStack/WebService/FargateService/SecurityGroup",
+        "SecurityGroupEgress": [
+          {
+            "CidrIp": "0.0.0.0/0",
+            "Description": "Allow all outbound traffic by default",
+            "IpProtocol": "-1"
+          }
+        ],
+        "VpcId": {
+          "Ref": "Vpc8378EB38"
+        }
+      },
+      "DependsOn": [
+        "WebServiceTaskTaskRoleDefaultPolicyC2E32007",
+        "WebServiceTaskTaskRole22AA8FAB"
+      ],
+      "Metadata": {
+        "aws:cdk:path": "DifyOnAwsStack/WebService/FargateService/SecurityGroup/Resource"
+      }
+    },
+    "WebServiceFargateServiceSecurityGroupfromDifyOnAwsStackAlbSecurityGroup6F7B80FF300046FF9330": {
+      "Type": "AWS::EC2::SecurityGroupIngress",
+      "Properties": {
+        "Description": "Load balancer to target",
+        "FromPort": 3000,
+        "GroupId": {
+          "Fn::GetAtt": [
+            "WebServiceFargateServiceSecurityGroup60FE78D6",
+            "GroupId"
+          ]
+        },
+        "IpProtocol": "tcp",
+        "SourceSecurityGroupId": {
+          "Fn::GetAtt": [
+            "AlbSecurityGroup433229ED",
+            "GroupId"
+          ]
+        },
+        "ToPort": 3000
+      },
+      "DependsOn": [
+        "WebServiceTaskTaskRoleDefaultPolicyC2E32007",
+        "WebServiceTaskTaskRole22AA8FAB"
+      ],
+      "Metadata": {
+        "aws:cdk:path": "DifyOnAwsStack/WebService/FargateService/SecurityGroup/from DifyOnAwsStackAlbSecurityGroup6F7B80FF:3000"
+      }
+    },
+    "CDKMetadata": {
+      "Type": "AWS::CDK::Metadata",
+      "Properties": {
+        "Analytics": "v2:deflate64:H4sIAAAAAAAA/31UTW/bMAz9Lb0r2ppetmPSrEWAAjOcoteAlhlPjS0F+kgQGP7voyXLdpphJ5FPTyT1SGnJH3/85I8PcLELUR4XtSx4u3MgjoygfYtiyduPk2DPB/WRPbPMF7UUO18odD02Wbn2Dt+hqHHCJ2xlrRYSnNRqJLOtsg6UCAdGOzPyDA6nwFvl0JD9SugFrkMlg7dyVOufBpVjOxTeSHd9NdqfQg3/BbaqMmjtHf4rwB2T0PA21/E6aU1VZkYfJEGZJjVCSdHqmH3i7dqLY6x9sOIykW/86KzBYsdQWN4+197SlXtiMl/AVNBLaY8bPEglk5BfEa0cSIVmhg1nd2jOMmo9mB0zJaXLwECDlGXUabMe8n7Z2oCDgupMVcUezY7NgUQmcU0UYwwbnaQlaRYotgEFFRoSILSkPxWXd7oBulmrR8LdToQ7VkNTlECjLFVVo9PqxSsR5UgGBUl237Y9WEtF8FW/MKzBOikoLMZ6bq+a44l6F8Y5YBTANv3DMZRvVC3MRXK6FLPWUBZQ09WJe6bntTqNwd5obx324ukbf86TpKMaOMn+x37u49ze+DNe1G+81sztGBXqy4OhieLths4bWfgk3NwnsXVFc/SmqzFQsvuJNknZjaZBN9uGmjyILAwnJbWVTptrfAE5Wu1NP6c0KrqZ3F70yZ5pfMOjh3mWJZo+GAtZ6DOrSGgmAm9vBiI1+mLvc/z27uRpfpQukX/ab+fld/oh+dPDp5VyYbxyskGex/UvS1BIAj0FAAA="
+      },
+      "Metadata": {
+        "aws:cdk:path": "DifyOnAwsStack/CDKMetadata/Default"
+      }
+    }
+  },
+  "Parameters": {
+    "SsmParameterValueawsserviceamiamazonlinuxlatestal2023amikernel61arm64C96584B6F00A464EAD1953AFF4B05118Parameter": {
+      "Type": "AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>",
+      "Default": "/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-6.1-arm64"
+    },
+    "BootstrapVersion": {
+      "Type": "AWS::SSM::Parameter::Value<String>",
+      "Default": "/cdk-bootstrap/hnb659fds/version",
+      "Description": "Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]"
+    }
+  },
+  "Outputs": {
+    "ConsoleListTasksCommand": {
+      "Value": {
+        "Fn::Join": [
+          "",
+          [
+            "aws ecs list-tasks --region ap-northeast-1 --cluster ",
+            {
+              "Ref": "ClusterEB0386A7"
+            },
+            " --service-name ",
+            {
+              "Fn::GetAtt": [
+                "ApiServiceFargateServiceE4EA9E4E",
+                "Name"
+              ]
+            },
+            " --desired-status RUNNING"
+          ]
+        ]
+      }
+    },
+    "ConsoleConnectToTaskCommand": {
+      "Value": {
+        "Fn::Join": [
+          "",
+          [
+            "aws ecs execute-command --region ap-northeast-1 --cluster ",
+            {
+              "Ref": "ClusterEB0386A7"
+            },
+            " --container Main --interactive --command \"bash\" --task TASK_ID"
+          ]
+        ]
+      }
+    },
+    "DifyUrl": {
+      "Value": {
+        "Fn::Join": [
+          "",
+          [
+            "https://",
+            {
+              "Fn::GetAtt": [
+                "AlbDistribution42730BA5",
+                "DomainName"
+              ]
+            }
+          ]
+        ]
+      }
+    }
+  },
+  "Rules": {
+    "CheckBootstrapVersion": {
+      "Assertions": [
+        {
+          "Assert": {
+            "Fn::Not": [
+              {
+                "Fn::Contains": [
+                  [
+                    "1",
+                    "2",
+                    "3",
+                    "4",
+                    "5"
+                  ],
+                  {
+                    "Ref": "BootstrapVersion"
+                  }
+                ]
+              }
+            ]
+          },
+          "AssertDescription": "CDK bootstrap stack version 6 required. Please run 'cdk bootstrap' with a recent version of the CDK CLI."
+        }
+      ]
+    }
+  }
+}
