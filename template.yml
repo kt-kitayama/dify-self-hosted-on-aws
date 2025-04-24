@@ -2436,7 +2436,7 @@
               "StartPeriod": 90,
               "Timeout": 5
             },
-            "Image": "langgenius/dify-api:1.1.3",
+            "Image": "langgenius/dify-api:1.3.0",
             "LogConfiguration": {
               "LogDriver": "awslogs",
               "Options": {
@@ -2764,7 +2764,7 @@
               }
             ],
             "Essential": true,
-            "Image": "langgenius/dify-api:1.1.3",
+            "Image": "langgenius/dify-api:1.3.0",
             "LogConfiguration": {
               "LogDriver": "awslogs",
               "Options": {
@@ -3870,7 +3870,7 @@
               "StartPeriod": 30,
               "Timeout": 5
             },
-            "Image": "langgenius/dify-web:1.1.3",
+            "Image": "langgenius/dify-web:1.3.0",
             "LogConfiguration": {
               "LogDriver": "awslogs",
               "Options": {
