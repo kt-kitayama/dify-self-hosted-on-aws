@@ -382,7 +382,7 @@ export class ApiService extends Construct {
       }),
       environment: {
         BEARER_TOKEN: 'dummy-key',
-        BEDROCK_REGION: 'us-west-2',
+        BEDROCK_REGION: 'ap-northeast-1',
       },
       logging: ecs.LogDriver.awsLogs({
         streamPrefix: 'log',
