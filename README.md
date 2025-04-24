@@ -1,6 +1,8 @@
-# Dify on AWS with CDK（日本語版）
+# Dify on AWS with CDK
 
 [![Build](https://github.com/aws-samples/dify-self-hosted-on-aws/actions/workflows/build.yml/badge.svg)](https://github.com/aws-samples/dify-self-hosted-on-aws/actions/workflows/build.yml)
+
+これはリージョンをap-northeast-1に変更したもので、個人的な利用のために作成しました。公式なものではないことに注意してください。
 
 AWSマネージドサービスとAWS CDKを使って、[Dify](https://dify.ai/)（LLMアプリ開発プラットフォーム）をセルフホストできます。
 
