@@ -1,0 +1,5 @@
+template-file-path: template.yml
+parameters:
+  SsmParameterValueawsserviceamiamazonlinuxlatestal2023amikernel61arm64C96584B6F00A464EAD1953AFF4B05118Parameter: /aws/service/ami-amazon-linux-latest/al2023-ami-kernel-6.1-arm64
+  BootstrapVersion: /cdk-bootstrap/hnb659fds/version
+tags: {}
