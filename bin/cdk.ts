@@ -8,25 +8,25 @@ import { EnvironmentProps } from '../lib/environment-props';
 export const props: EnvironmentProps = {
   awsRegion: 'ap-northeast-1',
   awsAccount: process.env.CDK_DEFAULT_ACCOUNT!,
-  // Set Dify version
-  difyImageTag: '1.1.3',
-  // Set plugin-daemon version to stable release
+  // Difyのバージョンを指定
+  difyImageTag: '1.3.0',
+  // plugin-daemonのバージョンを安定版に設定
   difyPluginDaemonImageTag: '0.0.6-local',
 
-  // uncomment the below options for less expensive configuration:
+  // 以下のオプションをコメントアウト解除すると、より安価な構成になります:
   isRedisMultiAz: false,
   useNatInstance: true,
   enableAuroraScalesToZero: true,
   useFargateSpot: true,
 
-  // Please see EnvironmentProps in lib/environment-props.ts for all the available properties
+  // 利用可能な全プロパティは lib/environment-props.ts の EnvironmentProps を参照してください
 };
 
 const app = new cdk.App();
 
 let virginia: ApNortheast1Stack | undefined = undefined;
 if ((props.useCloudFront ?? true) && (props.domainName || props.allowedIPv4Cidrs || props.allowedIPv6Cidrs)) {
-  // add a unique suffix to prevent collision with different Dify instances in the same account.
+  // 同一アカウント内で異なるDifyインスタンスの衝突を防ぐため、一意なサフィックスを付与
   virginia = new ApNortheast1Stack(app, `DifyOnAwsApNortheast1Stack${props.subDomain ? `-${props.subDomain}` : ''}`, {
     env: { region: 'us-east-1', account: props.awsAccount },
     crossRegionReferences: true,
